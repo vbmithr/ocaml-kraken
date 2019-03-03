@@ -3,4 +3,18 @@
  (public_name kraken)
  (modules kraken)
  (preprocess (pps ppx_sexp_conv))
- (libraries hex core async uri digestif.c yojson ocplib-json-typed))
+ (libraries hex ptime uri ezjsonm ocplib-json-typed))
+
+(library
+ (name        kraken_ws)
+ (public_name kraken-ws)
+ (modules kraken_ws)
+ (preprocess (pps ppx_sexp_conv))
+ (libraries kraken ptime uri ocplib-json-typed))
+
+(library
+ (name        kraken_ws_async)
+ (public_name kraken-ws-async)
+ (modules kraken_ws_async)
+ (preprocess (pps ppx_sexp_conv))
+ (libraries ezjsonm kraken_ws core async fastws-async))

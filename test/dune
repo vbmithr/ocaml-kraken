@@ -1,0 +1,9 @@
+(executable
+ (name ws)
+ (public_name kraken-ws-cli)
+ (package kraken-ws-async)
+ (preprocess (pps ppx_jane ppx_sexp_conv))
+ (libraries
+  logs-async-reporter
+  kraken-ws
+  kraken-ws-async))

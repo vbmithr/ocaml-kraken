@@ -1,29 +1,18 @@
-open Sexplib.Std
-
-module Ezjsonm_encoding = struct
-  include Json_encoding.Make(Json_repr.Ezjsonm)
-
-  let destruct_safe encoding value =
-    try destruct encoding value with exn ->
-      Format.eprintf "%a@."
-        (Json_encoding.print_error ?print_unknown:None) exn ;
-      raise exn
+module Ezjsonm_encoding : sig
+  include module type of Json_encoding.Make(Json_repr.Ezjsonm)
+  val destruct_safe : 'a Json_encoding.encoding -> Ezjsonm.value -> 'a
 end
 
-module Ptime = struct
-  include Ptime
+module Ptime : sig
+  include module type of Ptime
+    with type t = Ptime.t
+     and type span = Ptime.span
 
-  let t_of_sexp sexp =
-    let sexp_str = string_of_sexp sexp in
-    match of_rfc3339 sexp_str with
-    | Ok (t, _, _) -> t
-    | _ -> invalid_arg "Ptime.t_of_sexp"
-
-  let sexp_of_t t =
-    sexp_of_string (to_rfc3339 t)
+  val t_of_sexp : Sexplib.Sexp.t -> Ptime.t
+  val sexp_of_t : Ptime.t -> Sexplib.Sexp.t
 end
 
-module OrdType = struct
+module OrdType : sig
   type t = [
     | `order_type_unset
     | `order_type_market
@@ -33,18 +22,10 @@ module OrdType = struct
     | `order_type_market_if_touched
   ]
 
-  let encoding =
-    let open Json_encoding in
-    string_enum [
-      "market", `order_type_market ;
-      "limit", `order_type_limit ;
-      "stop-loss", `order_type_stop ;
-      "stop-loss-limit", `order_type_stop_limit ;
-      "take-profit", `order_type_market_if_touched ;
-    ]
+  val encoding : t Json_encoding.encoding
 end
 
-module OrdStatus = struct
+module OrdStatus : sig
   type t = [
       | `order_status_pending_open
       | `order_status_open
@@ -52,18 +33,10 @@ module OrdStatus = struct
       | `order_status_canceled
     ]
 
-  let encoding : t Json_encoding.encoding =
-    let open Json_encoding in
-    string_enum [
-      "pending", `order_status_pending_open ;
-      "open", `order_status_open ;
-      "closed", `order_status_filled ;
-      "canceled", `order_status_canceled ;
-      "expired", `order_status_canceled ;
-    ]
+  val encoding : t Json_encoding.encoding
 end
 
-module Balance = struct
+module Balance : sig
   type t = {
     equivalent_balance : float ;
     trade_balance : float ;
@@ -77,7 +50,7 @@ module Balance = struct
   }
 end
 
-module Order = struct
+module Order : sig
   type descr = {
     pair: string;
     (* type_: string [@key "type"]; *)
@@ -110,7 +83,7 @@ module Order = struct
   }
 end
 
-module Filled_order = struct
+module Filled_order : sig
   type t = {
     ordertxid: string;
     pair: string;
