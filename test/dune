@@ -1,5 +1,15 @@
+(test
+ (name       test)
+ (modules    test)
+ (preprocess (pps ppx_sexp_conv))
+ (libraries
+  kraken-rest
+  alcotest-async
+  logs-async-reporter))
+
 (executable
  (name ws)
+ (modules ws)
  (public_name kraken-ws-cli)
  (package kraken-ws-async)
  (preprocess (pps ppx_jane ppx_sexp_conv))

@@ -1,3 +1,5 @@
+val strfloat : float Json_encoding.encoding
+
 module Ezjsonm_encoding : sig
   include module type of Json_encoding.Make(Json_repr.Ezjsonm)
   val destruct_safe : 'a Json_encoding.encoding -> Ezjsonm.value -> 'a
@@ -10,6 +12,7 @@ module Ptime : sig
 
   val t_of_sexp : Sexplib.Sexp.t -> Ptime.t
   val sexp_of_t : Ptime.t -> Sexplib.Sexp.t
+  val encoding : t Json_encoding.encoding
 end
 
 module OrdType : sig
@@ -20,7 +23,7 @@ module OrdType : sig
     | `order_type_stop
     | `order_type_stop_limit
     | `order_type_market_if_touched
-  ]
+  ] [@@deriving sexp]
 
   val encoding : t Json_encoding.encoding
 end
@@ -46,64 +49,78 @@ module Balance : sig
     positions_value : float ;
     equity : float ;
     free_margin : float ;
-    margin_level : float ;
-  }
+  } [@@deriving sexp]
+
+  val pp : Format.formatter -> t -> unit
+  val encoding : t Json_encoding.encoding
 end
 
 module Order : sig
   type descr = {
-    pair: string;
-    (* type_: string [@key "type"]; *)
-    ordertype: string;
-    price: string;
-    price2: string;
-    leverage: string;
-    order: string;
-    (* close: (string [@default ""]); *)
-  }
+    pair: string ;
+    side: [`buy | `sell] ;
+    ord_type: OrdType.t ;
+    price: float ;
+    price2: float ;
+    leverage: string ;
+    order: string ;
+    close: string option ;
+  } [@@deriving sexp]
 
   type t = {
-    refid: string option;
-    userref: string option;
-    status: string;
-    opentm: float;
-    starttm: float;
-    expiretm: float;
+    status: OrdStatus.t ;
+    opentm: Ptime.t option ;
+    closetm: Ptime.t option ;
+    starttm: Ptime.t option ;
+    expiretm: Ptime.t option ;
     descr: descr;
-    vol: string;
-    vol_exec: string;
-    cost: string;
-    fee: string;
-    price: string;
-    (* stopprice: (string [@default ""]); *)
-    (* limitprice: (string [@default ""]); *)
-    (* misc: string; *)
-    (* oflags: string; *)
-    (* trades: (string list [@default []]); *)
-  }
+    vol: float ;
+    vol_exec: float ;
+    cost: float ;
+    fee: float ;
+    price: float ;
+    stopprice: float option ;
+    limitprice: float option ;
+    misc: string ;
+    oflags: string ;
+  } [@@deriving sexp]
+
+  val pp : Format.formatter -> t -> unit
+  val encoding : t Json_encoding.encoding
 end
 
 module Filled_order : sig
   type t = {
-    ordertxid: string;
-    pair: string;
-    time: float;
-    type_: string;
-    ordertype: string;
-    price: string;
-    cost: string;
-    fee: string;
-    vol: string;
-    margin: string;
-    misc: string;
-    (* closing: *)
-    (* posstatus: *)
-    (* cprice: *)
-    (* ccost: *)
-    (* cfee: *)
-    (* cvol: *)
-    (* cmargin: *)
-    (* net: *)
-    (* trades: *)
-  }
+    ordertxid: string ;
+    postxid: string option ;
+    pair: string ;
+    time: Ptime.t ;
+    side: [`buy | `sell] ;
+    ord_type: OrdType.t ;
+    price: float ;
+    cost: float ;
+    fee: float ;
+    vol: float ;
+    margin: float ;
+    misc: string ;
+  } [@@deriving sexp]
+
+  val pp : Format.formatter -> t -> unit
+  val encoding : t Json_encoding.encoding
+end
+
+module Ledger : sig
+  type t = {
+    refid : string ;
+    time : Ptime.t ;
+    typ : [`deposit|`withdrawal|`trade|`margin|`transfer] ;
+    aclass : [`currency] ;
+    asset : string ;
+    amount : float ;
+    fee : float ;
+    balance : float ;
+  } [@@deriving sexp]
+
+  val pp : Format.formatter -> t -> unit
+  val encoding : t Json_encoding.encoding
 end

@@ -1,9 +1,6 @@
 open Sexplib.Std
 open Kraken
 
-let strfloat =
-  Json_encoding.(conv string_of_float float_of_string string)
-
 type subscription =
   | Ticker
   | OHLC of int
@@ -174,15 +171,6 @@ let msg'_encoding encoding =
   let open Json_encoding in
   tup2 int encoding
 
-let ptime_encoding =
-  let open Json_encoding in
-  conv
-    Ptime.to_float_s
-    (fun ts -> match Ptime.of_float_s ts with
-       | None -> invalid_arg "ptime_encoding"
-       | Some ts -> ts)
-    strfloat
-
 let trade_encoding =
   let open Json_encoding in
   conv
@@ -190,7 +178,7 @@ let trade_encoding =
        (price, qty, ts, side, ord_type, misc))
     (fun (price, qty, ts, side, ord_type, misc) ->
        { price ; qty ; ts ; side ; ord_type ; misc })
-    (tup6 strfloat strfloat ptime_encoding
+    (tup6 strfloat strfloat Ptime.encoding
        side_encoding ord_type_encoding string)
 
 type book_entry = {
@@ -204,7 +192,7 @@ let book_entry_encoding =
   conv
     (fun { price ; qty ; ts } -> (price, qty, ts))
     (fun (price, qty, ts) -> { price ; qty ; ts })
-    (tup3 strfloat strfloat ptime_encoding)
+    (tup3 strfloat strfloat Ptime.encoding)
 
 type book = {
   asks : book_entry list ;

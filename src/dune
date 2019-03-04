@@ -6,6 +6,23 @@
  (libraries hex ptime uri ezjsonm ocplib-json-typed))
 
 (library
+ (name        kraken_rest)
+ (public_name kraken-rest)
+ (modules kraken_rest)
+ (preprocess (pps ppx_sexp_conv))
+ (libraries
+  base64
+  digestif.c
+  kraken
+  ptime
+  uri
+  logs-async
+  conduit-async
+  httpaf
+  httpaf-async
+  ocplib-json-typed))
+
+(library
  (name        kraken_ws)
  (public_name kraken-ws)
  (modules kraken_ws)
