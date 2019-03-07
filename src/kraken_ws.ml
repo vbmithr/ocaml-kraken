@@ -119,13 +119,14 @@ type error = {
 let error_encoding =
   let open Json_encoding in
   conv
-    (fun { reqid ; msg } -> ((), reqid, (), msg))
-    (fun ((), reqid, (), msg) -> { reqid ; msg })
-    (obj4
-       (req "event" (constant "subscriptionStatus"))
-       (opt "reqid" int)
-       (req "status" (constant "error"))
-       (req "errorMessage" string))
+    (fun { reqid ; msg } -> (), ((), reqid, (), msg))
+    (fun ((), ((), reqid, (), msg)) -> { reqid ; msg })
+    (merge_objs unit
+    ((obj4
+        (req "event" (constant "subscriptionStatus"))
+        (opt "reqid" int)
+        (req "status" (constant "error"))
+        (req "errorMessage" string))))
 
 type unsubscribe = {
   chanid : int ;
