@@ -20,7 +20,8 @@
   conduit-async
   httpaf
   httpaf-async
-  ocplib-json-typed))
+  ocplib-json-typed
+  fastrest))
 
 (library
  (name        kraken_ws)

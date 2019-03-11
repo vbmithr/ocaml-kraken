@@ -25,21 +25,20 @@ let () =
 
 let wrap_request ?(speed=`Quick) n service =
   let auth = {
-    key = cfg.key ;
-    secret = Base64.decode_exn cfg.secret ;
+    Fastrest.key = cfg.Cfg.key ;
+    secret = Base64.decode_exn cfg.Cfg.secret ;
   } in
   Alcotest_async.test_case n speed begin fun () ->
-    request ~auth service >>= function
-    | Ok v ->
-      Logs_async.info (fun m -> m "%a" service.pp v) ;
+    Fastrest.request ~auth service >>= function
+    | Ok _v -> Deferred.unit
     | Error _ -> failwith ""
   end
 
 let rest = [
   (* wrap_request "time" time ;
    * wrap_request "account_balance" account_balance ;
-   * wrap_request "trade_balance" trade_balance ; *)
-  (* wrap_request "closed_orders" closed_orders ;
+   * wrap_request "trade_balance" trade_balance ;
+   * wrap_request "closed_orders" closed_orders ;
    * wrap_request "trade_history" trade_history ; *)
   wrap_request "ledgers" ledgers ;
 ]
