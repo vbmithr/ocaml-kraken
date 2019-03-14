@@ -11,15 +11,12 @@
  (modules kraken_rest)
  (preprocess (pps ppx_sexp_conv))
  (libraries
+  core
   base64
   digestif.c
   kraken
   ptime
   uri
-  logs-async
-  conduit-async
-  httpaf
-  httpaf-async
   ocplib-json-typed
   fastrest))
 

@@ -14,7 +14,7 @@ let result_encoding encoding =
        (req "error" (list string))
        (opt "result" encoding))
 
-let auth service { key ; secret } =
+let auth service { key ; secret ; _ } =
   let nonce = Time_ns.(to_int63_ns_since_epoch (now ())) in
   let params = ["nonce", [Int63.to_string nonce]] in
   let encoded = Uri.encoded_of_query (params @ service.params) in
