@@ -24,5 +24,7 @@ let with_connection ?(sandbox=false) ?heartbeat f =
       Logs.debug (fun m -> m "-> %s" doc) ;
       doc
     end ;
-    f r client_write
+    Monitor.protect
+      (fun () -> f r client_write)
+      ~finally:(fun () -> Pipe.close_read ws_read ; Deferred.unit)
   end
