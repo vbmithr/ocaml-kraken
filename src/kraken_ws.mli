@@ -1,3 +1,13 @@
+type pair = {
+  base: string ;
+  quote: string ;
+}  [@@deriving sexp]
+
+val pp_print_pair : Format.formatter -> pair -> unit
+val string_of_pair : pair -> string
+val pair_of_string : string -> pair option
+val pair_of_string_exn : string -> pair
+
 type subscription =
   | Ticker
   | OHLC of int
@@ -16,7 +26,7 @@ type status = {
 
 type subscribe = {
   reqid: int option ;
-  pair: string list ;
+  pair: pair list ;
   sub: subscription ;
 }
 
@@ -28,7 +38,7 @@ type subscriptionStatus =
 type subscription_status = {
   chanid : int ;
   status : subscriptionStatus ;
-  pair : string ;
+  pair : pair ;
   reqid : int option ;
   subscription : subscription ;
 }
