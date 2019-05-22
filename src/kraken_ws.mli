@@ -52,7 +52,7 @@ type subscription_status = {
   pair : Pair.t ;
   reqid : int option ;
   subscription : subscription ;
-}
+} [@@deriving sexp]
 
 type error = {
   reqid : int option ;
@@ -66,7 +66,7 @@ type trade = {
   side: [`buy|`sell] ;
   ord_type: [`market|`limit] ;
   misc: string ;
-}
+} [@@deriving sexp]
 
 type book_entry = {
   price: float ;
