@@ -1,12 +1,14 @@
-type pair = {
-  base: string ;
-  quote: string ;
-}  [@@deriving sexp]
+module Pair : sig
+  type t = {
+    base: string ;
+    quote: string ;
+  }  [@@deriving sexp]
 
-val pp_print_pair : Format.formatter -> pair -> unit
-val string_of_pair : pair -> string
-val pair_of_string : string -> pair option
-val pair_of_string_exn : string -> pair
+  val pp : Format.formatter -> t -> unit
+  val to_string : t -> string
+  val of_string : string -> t option
+  val of_string_exn : string -> t
+end
 
 type subscription = private
   | Ticker
@@ -26,16 +28,16 @@ type status = {
 
 type subscribe = {
   reqid: int option ;
-  pairs: pair list ;
+  pairs: Pair.t list ;
   sub: subscription ;
 }
 
-val trades : ?reqid:int -> pair list -> subscribe
-val book10 : ?reqid:int -> pair list -> subscribe
-val book25 : ?reqid:int -> pair list -> subscribe
-val book100 : ?reqid:int -> pair list -> subscribe
-val book500 : ?reqid:int -> pair list -> subscribe
-val book1000 : ?reqid:int -> pair list -> subscribe
+val trades : ?reqid:int -> Pair.t list -> subscribe
+val book10 : ?reqid:int -> Pair.t list -> subscribe
+val book25 : ?reqid:int -> Pair.t list -> subscribe
+val book100 : ?reqid:int -> Pair.t list -> subscribe
+val book500 : ?reqid:int -> Pair.t list -> subscribe
+val book1000 : ?reqid:int -> Pair.t list -> subscribe
 
 type subscriptionStatus =
   | Subscribed
@@ -45,7 +47,7 @@ type subscriptionStatus =
 type subscription_status = {
   chanid : int ;
   status : subscriptionStatus ;
-  pair : pair ;
+  pair : Pair.t ;
   reqid : int option ;
   subscription : subscription ;
 }

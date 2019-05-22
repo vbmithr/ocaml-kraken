@@ -1,26 +1,28 @@
 open Sexplib.Std
 open Kraken
 
-type pair = {
-  base: string ;
-  quote: string ;
-} [@@deriving sexp]
+module Pair = struct
+  type t = {
+    base: string ;
+    quote: string ;
+  } [@@deriving sexp]
 
-let pp_print_pair ppf { base ; quote } =
-  Format.fprintf ppf "%s/%s" base quote
+  let pp ppf { base ; quote } =
+    Format.fprintf ppf "%s/%s" base quote
 
-let string_of_pair { base ; quote } =
-  base ^ "/" ^ quote
+  let to_string { base ; quote } =
+    base ^ "/" ^ quote
 
-let pair_of_string s =
-  match String.split_on_char '/' s with
-  | [base ; quote] -> Some { base ; quote }
-  | _ -> None
+  let of_string s =
+    match String.split_on_char '/' s with
+    | [base ; quote] -> Some { base ; quote }
+    | _ -> None
 
-let pair_of_string_exn s =
-  match String.split_on_char '/' s with
-  | [base ; quote] -> { base ; quote }
-  | _ -> invalid_arg "pair_of_string_exn"
+  let of_string_exn s =
+    match String.split_on_char '/' s with
+    | [base ; quote] -> { base ; quote }
+    | _ -> invalid_arg "pair_of_string_exn"
+end
 
 type subscription =
   | Ticker
@@ -91,7 +93,7 @@ let status_encoding =
 
 type subscribe = {
   reqid: int option ;
-  pairs: pair list ;
+  pairs: Pair.t list ;
   sub: subscription ;
 } [@@deriving sexp]
 
@@ -106,9 +108,9 @@ let subscribe_encoding =
   let open Json_encoding in
   conv
     (fun { reqid ; pairs ; sub } ->
-       ((), reqid, List.map string_of_pair pairs, sub))
+       ((), reqid, List.map Pair.to_string pairs, sub))
     (fun ((), reqid, pair, sub) ->
-       let pairs = List.map pair_of_string_exn pair in
+       let pairs = List.map Pair.of_string_exn pair in
        { reqid ; pairs ; sub })
     (obj4
      (req "event" (constant "subscribe"))
@@ -119,7 +121,7 @@ let subscribe_encoding =
 type subscription_status = {
   chanid : int ;
   status : subscriptionStatus ;
-  pair : pair ;
+  pair : Pair.t ;
   reqid : int option ;
   subscription : subscription ;
 } [@@deriving sexp]
@@ -128,9 +130,9 @@ let subscription_status_encoding =
   let open Json_encoding in
   conv
     (fun { chanid ; status ; pair ; reqid ; subscription } ->
-       ((), reqid, status, chanid, string_of_pair pair, subscription))
+       ((), reqid, status, chanid, Pair.to_string pair, subscription))
     (fun ((), reqid, status, chanid, pair, subscription) ->
-       let pair = pair_of_string_exn pair in
+       let pair = Pair.of_string_exn pair in
        { reqid ; status ; chanid ; pair ; subscription })
   (obj6
      (req "event" (constant "subscriptionStatus"))
