@@ -13,12 +13,6 @@ module Log = (val Logs.src_log src : Logs.LOG)
 let connect ?(sandbox=false) () =
   let url = if sandbox then sandbox_url else url in
   Fastws_async.connect_ez url >>= fun (r, w, cleaned_up) ->
-  let c = Lazy.force Time_stamp_counter.calibrator in
-  let stop = Deferred.any_unit [Pipe.closed r ; Pipe.closed w] in
-  (* Calibration *)
-  Clock_ns.every ~stop (Time_ns.Span.of_int_sec 60) begin fun () ->
-    Time_stamp_counter.Calibrator.calibrate c
-  end ;
   let last_ts = ref (Time_stamp_counter.now ()) in
   let client_read = Pipe.map' r ~f:begin fun msgq ->
       last_ts := Time_stamp_counter.now () ;
@@ -42,12 +36,6 @@ let connect ?(sandbox=false) () =
 let with_connection ?(sandbox=false) f =
   let url = if sandbox then sandbox_url else url in
   Fastws_async.with_connection_ez url ~f:begin fun r w ->
-    let c = Lazy.force Time_stamp_counter.calibrator in
-    let stop = Deferred.any_unit [Pipe.closed r ; Pipe.closed w] in
-    (* Calibration *)
-    Clock_ns.every ~stop (Time_ns.Span.of_int_sec 60) begin fun () ->
-      Time_stamp_counter.Calibrator.calibrate c
-    end ;
     let last_ts = ref (Time_stamp_counter.now ()) in
     let r = Pipe.map' r ~f:begin fun msgq ->
         last_ts := Time_stamp_counter.now () ;
