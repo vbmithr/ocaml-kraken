@@ -18,11 +18,11 @@ let process_user_cmd w =
     | "ping" :: _ ->
       Pipe.write w (Ping None)
     | "trades" :: pair ->
-      let pair = List.map ~f:pair_of_string_exn pair in
-      Pipe.write w (Subscribe { reqid = None ; pair ; sub = Trade })
+      let pairs = List.map ~f:pair_of_string_exn pair in
+      Pipe.write w (Subscribe (trades pairs))
     | "books" :: pair ->
-      let pair = List.map ~f:pair_of_string_exn pair in
-      Pipe.write w (Subscribe { reqid = None ; pair ; sub = Book 10 })
+      let pairs = List.map ~f:pair_of_string_exn pair in
+      Pipe.write w (Subscribe (book10 pairs))
     | h :: _ ->
       Logs_async.err (fun m -> m "Unknown command %s" h)
     | [] ->

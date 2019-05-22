@@ -91,18 +91,25 @@ let status_encoding =
 
 type subscribe = {
   reqid: int option ;
-  pair: pair list ;
+  pairs: pair list ;
   sub: subscription ;
 } [@@deriving sexp]
+
+let trades ?reqid pairs = { reqid ; pairs ; sub = Trade }
+let book10 ?reqid pairs = { reqid ; pairs ; sub = Book 10 }
+let book25 ?reqid pairs = { reqid ; pairs ; sub = Book 10 }
+let book100 ?reqid pairs = { reqid ; pairs ; sub = Book 10 }
+let book500 ?reqid pairs = { reqid ; pairs ; sub = Book 10 }
+let book1000 ?reqid pairs = { reqid ; pairs ; sub = Book 10 }
 
 let subscribe_encoding =
   let open Json_encoding in
   conv
-    (fun { reqid ; pair ; sub } ->
-       ((), reqid, List.map string_of_pair pair, sub))
+    (fun { reqid ; pairs ; sub } ->
+       ((), reqid, List.map string_of_pair pairs, sub))
     (fun ((), reqid, pair, sub) ->
-       let pair = List.map pair_of_string_exn pair in
-       { reqid ; pair ; sub })
+       let pairs = List.map pair_of_string_exn pair in
+       { reqid ; pairs ; sub })
     (obj4
      (req "event" (constant "subscribe"))
      (opt "reqid" int)

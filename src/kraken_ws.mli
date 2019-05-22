@@ -8,7 +8,7 @@ val string_of_pair : pair -> string
 val pair_of_string : string -> pair option
 val pair_of_string_exn : string -> pair
 
-type subscription =
+type subscription = private
   | Ticker
   | OHLC of int
   | Trade
@@ -26,9 +26,16 @@ type status = {
 
 type subscribe = {
   reqid: int option ;
-  pair: pair list ;
+  pairs: pair list ;
   sub: subscription ;
 }
+
+val trades : ?reqid:int -> pair list -> subscribe
+val book10 : ?reqid:int -> pair list -> subscribe
+val book25 : ?reqid:int -> pair list -> subscribe
+val book100 : ?reqid:int -> pair list -> subscribe
+val book500 : ?reqid:int -> pair list -> subscribe
+val book1000 : ?reqid:int -> pair list -> subscribe
 
 type subscriptionStatus =
   | Subscribed
