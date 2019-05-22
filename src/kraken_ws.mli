@@ -4,6 +4,8 @@ module Pair : sig
     quote: string ;
   }  [@@deriving sexp]
 
+  val compare : t -> t -> int
+
   val pp : Format.formatter -> t -> unit
   val to_string : t -> string
   val of_string : string -> t option

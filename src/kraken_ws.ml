@@ -7,6 +7,11 @@ module Pair = struct
     quote: string ;
   } [@@deriving sexp]
 
+  let compare { base ; quote } { base = base' ; quote = quote' } =
+    match String.compare base base' with
+    | 0 -> String.compare quote quote'
+    | n -> n
+
   let pp ppf { base ; quote } =
     Format.fprintf ppf "%s/%s" base quote
 
