@@ -279,12 +279,17 @@ module Filled_order = struct
             (opt "postxid" string)))
 end
 
+type aclass = [`currency] [@@deriving sexp]
+
+let aclass_encoding =
+  Json_encoding.string_enum ["currency", `currency]
+
 module Ledger = struct
   type t = {
     refid : string ;
     time : Ptime.t ;
     typ : [`deposit|`withdrawal|`trade|`margin|`transfer] ;
-    aclass : [`currency] ;
+    aclass : aclass ;
     asset : string ;
     amount : float ;
     fee : float ;
@@ -304,9 +309,6 @@ module Ledger = struct
       "transfer", `transfer ;
     ]
 
-  let aclass_encoding =
-    Json_encoding.string_enum ["currency", `currency]
-
   let encoding =
     let open Json_encoding in
     conv
@@ -323,4 +325,36 @@ module Ledger = struct
          (req "amount" strfloat)
          (req "fee" strfloat)
          (req "balance" strfloat))
+end
+
+module Pair = struct
+  type t = {
+    altname: string ;
+    wsname: string option ;
+    aclass_base: aclass ;
+    base: string ;
+    aclass_quote: aclass ;
+    quote: string ;
+    pair_decimals: int ;
+  } [@@deriving sexp]
+
+  let pp ppf t =
+    Format.fprintf ppf "%a" Sexplib.Sexp.pp (sexp_of_t t)
+
+  let encoding =
+    let open Json_encoding in
+    conv
+      (fun { altname ; wsname ; aclass_base ; base ; aclass_quote ; quote ; pair_decimals } ->
+         ((), (altname, wsname, aclass_base, base, aclass_quote, quote, pair_decimals)))
+      (fun ((), (altname, wsname, aclass_base, base, aclass_quote, quote, pair_decimals)) ->
+         { altname ; wsname ; aclass_base ; base ; aclass_quote ; quote ; pair_decimals })
+      (merge_objs unit
+         (obj7
+            (req "altname" string)
+            (opt "wsname" string)
+            (req "aclass_base" aclass_encoding)
+            (req "base" string)
+            (req "aclass_quote" aclass_encoding)
+            (req "quote" string)
+            (req "pair_decimals" int)))
 end

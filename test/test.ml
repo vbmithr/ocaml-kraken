@@ -41,6 +41,7 @@ let rest = [
    * wrap_request "trade_balance" trade_balance ;
    * wrap_request "closed_orders" closed_orders ;
    * wrap_request "trade_history" trade_history ; *)
+  wrap_request "AssetPairs" asset_pairs ;
   wrap_request "ledgers" ledgers ;
 ]
 

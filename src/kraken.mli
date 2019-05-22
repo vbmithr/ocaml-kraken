@@ -109,16 +109,33 @@ module Filled_order : sig
   val encoding : t Json_encoding.encoding
 end
 
+type aclass = [`currency]
+
 module Ledger : sig
   type t = {
     refid : string ;
     time : Ptime.t ;
     typ : [`deposit|`withdrawal|`trade|`margin|`transfer] ;
-    aclass : [`currency] ;
+    aclass : aclass ;
     asset : string ;
     amount : float ;
     fee : float ;
     balance : float ;
+  } [@@deriving sexp]
+
+  val pp : Format.formatter -> t -> unit
+  val encoding : t Json_encoding.encoding
+end
+
+module Pair : sig
+  type t = {
+    altname: string ;
+    wsname: string option ;
+    aclass_base: aclass ;
+    base: string ;
+    aclass_quote: aclass ;
+    quote: string ;
+    pair_decimals: int ;
   } [@@deriving sexp]
 
   val pp : Format.formatter -> t -> unit

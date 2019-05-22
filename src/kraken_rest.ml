@@ -91,6 +91,10 @@ let trade_encoding = boxed_list_encoding "trades" Filled_order.encoding
 let closed_encoding = boxed_list_encoding "closed" Order.encoding
 let ledger_encoding = boxed_list_encoding "ledger" Ledger.encoding
 
+let asset_pairs =
+  get (result_encoding (list_encoding Pair.encoding))
+    (Uri.with_path base_url "0/public/AssetPairs")
+
 let account_balance =
   post_form ~auth (result_encoding balances_encoding)
     (Uri.with_path base_url "0/private/Balance")
