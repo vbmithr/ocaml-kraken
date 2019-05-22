@@ -36,7 +36,7 @@ let process_user_cmd w =
 
 let main () =
   with_connection begin fun r w ->
-    let log_incoming (_, msg) =
+    let log_incoming msg =
       Logs_async.debug ~src (fun m -> m "%a" pp msg) in
     Deferred.all_unit [
       process_user_cmd w ;
