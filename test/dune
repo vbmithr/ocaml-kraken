@@ -3,9 +3,22 @@
  (modules    test)
  (preprocess (pps ppx_jane ppx_sexp_conv))
  (libraries
-  kraken-rest
-  alcotest-async
-  logs-async-reporter))
+   kraken-rest
+   alcotest-async
+   logs-async-reporter))
+
+(executable
+ (name compta)
+ (modules compta)
+ (public_name kraken-compta)
+ (package kraken-rest)
+ (preprocess (pps ppx_jane ppx_sexp_conv))
+ (libraries
+   logs-async-reporter
+   kraken-rest
+   kx-async
+   kraken-ws
+   kraken-ws-async))
 
 (executable
  (name ws)
@@ -14,6 +27,6 @@
  (package kraken-ws-async)
  (preprocess (pps ppx_jane ppx_sexp_conv))
  (libraries
-  logs-async-reporter
-  kraken-ws
-  kraken-ws-async))
+   logs-async-reporter
+   kraken-ws
+   kraken-ws-async))
