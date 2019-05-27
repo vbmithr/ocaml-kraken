@@ -16,8 +16,8 @@ let result_encoding encoding =
 
 let auth service { key ; secret ; _ } =
   let nonce = Time_ns.(to_int63_ns_since_epoch (now ())) in
-  let params = ["nonce", [Int63.to_string nonce]] in
-  let encoded = Uri.encoded_of_query (params @ service.params) in
+  let params = ("nonce", [Int63.to_string nonce]) :: service.params in
+  let encoded = Uri.encoded_of_query params in
   let open Digestif in
   let digest =
     SHA256.(digest_string ((Int63.to_string nonce) ^ encoded) |>
@@ -103,12 +103,14 @@ let trade_balance =
   post_form ~auth (result_encoding Balance.encoding)
     (Uri.with_path base_url "0/private/TradeBalance")
 
-let closed_orders =
-  post_form ~auth (result_encoding closed_encoding)
+let closed_orders ofs =
+  post_form ~auth ~params:["ofs", [Int.to_string ofs]]
+    (result_encoding closed_encoding)
     (Uri.with_path base_url "0/private/ClosedOrders")
 
-let trade_history =
-  post_form ~auth (result_encoding trade_encoding)
+let trade_history ofs =
+  post_form ~auth ~params:["ofs", [Int.to_string ofs]]
+    (result_encoding trade_encoding)
     (Uri.with_path base_url "0/private/TradesHistory")
 
 let ledgers =
