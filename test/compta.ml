@@ -47,23 +47,21 @@ let ordTypes_encoding =
 
 let line =
   let open Kx in
-  t9 (v timestamp) (v sym) (compounds char) sides_encoding ordTypes_encoding
-    (v float) (v float) (v float) (v float)
+  t7 (v timestamp) (v sym) (compounds char) sides_encoding ordTypes_encoding
+    (v float) (v float)
 
 let insertFills w fills =
   let open Kx in
-  let (times,syms,tids,sides,ordTypes,prices,qties,costs,fees) =
-    List.fold_right fills ~init:([],[],[],[],[],[],[],[],[])
-      ~f:begin fun (tid, fill) (times,syms,tids,sides,ordTypes,prices,qties,costs,fees) ->
+  let (times,syms,tids,sides,ordTypes,prices,qties) =
+    List.fold_right fills ~init:([],[],[],[],[],[],[])
+      ~f:begin fun (tid, fill) (times,syms,tids,sides,ordTypes,prices,qties) ->
         (fill.Filled_order.time :: times,
          fill.pair :: syms,
          tid :: tids,
          fill.side :: sides,
          fill.ord_type :: ordTypes,
          fill.price :: prices,
-         fill.vol :: qties,
-         fill.cost :: costs,
-         fill.fee :: fees)
+         fill.vol :: qties)
       end in
   let v =
     construct line Array.(of_list times,
@@ -72,9 +70,7 @@ let insertFills w fills =
                           of_list sides,
                           of_list ordTypes,
                           of_list prices,
-                          of_list qties,
-                          of_list costs,
-                          of_list fees) in
+                          of_list qties) in
   Pipe.write w ("upd", [|v|])
 
 let main () =
