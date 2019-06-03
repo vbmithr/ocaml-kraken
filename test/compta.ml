@@ -47,7 +47,7 @@ let ordTypes_encoding =
 
 let line =
   let open Kx in
-  t7 (v timestamp) (v sym) (compounds char) sides_encoding ordTypes_encoding
+  t7 (v timestamp) (v sym) (list (s char)) sides_encoding ordTypes_encoding
     (v float) (v float)
 
 let insertFills w fills =
