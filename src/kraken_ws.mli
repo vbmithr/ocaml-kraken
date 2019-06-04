@@ -10,6 +10,7 @@ module Pair : sig
   val to_string : t -> string
   val of_string : string -> t option
   val of_string_exn : string -> t
+  val encoding : t Json_encoding.encoding
 end
 
 type subscription = private
@@ -48,8 +49,9 @@ type subscriptionStatus =
 
 type subscription_status = {
   chanid : int ;
-  status : subscriptionStatus ;
+  name : string ;
   pair : Pair.t ;
+  status : subscriptionStatus ;
   reqid : int option ;
   subscription : subscription ;
 } [@@deriving sexp]
@@ -72,6 +74,7 @@ type book_entry = {
   price: float ;
   qty: float ;
   ts: Ptime.t ;
+  republish: bool ;
 } [@@deriving sexp]
 
 type book = {
@@ -93,10 +96,18 @@ type t =
   | Unsubscribe of unsubscribe
   | Error of error
   | SubscriptionStatus of subscription_status
-  | Trade of int * trade list
-  | Snapshot of int * book
-  | BookUpdate of int * book
+  | Trade of trade list update
+  | Snapshot of book update
+  | BookUpdate of book update
+
+and 'a update = {
+  chanid: int ;
+  feed: string ;
+  pair: Pair.t ;
+  data: 'a ;
+}
 [@@deriving sexp]
+
 
 val pp : Format.formatter -> t -> unit
 val encoding : t Json_encoding.encoding

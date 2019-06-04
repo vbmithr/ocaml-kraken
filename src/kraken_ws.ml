@@ -27,6 +27,9 @@ module Pair = struct
     match String.split_on_char '/' s with
     | [base ; quote] -> { base ; quote }
     | _ -> invalid_arg "pair_of_string_exn"
+
+  let encoding =
+    Json_encoding.(conv to_string of_string_exn string)
 end
 
 type subscription =
@@ -125,8 +128,9 @@ let subscribe_encoding =
 
 type subscription_status = {
   chanid : int ;
-  status : subscriptionStatus ;
+  name : string ;
   pair : Pair.t ;
+  status : subscriptionStatus ;
   reqid : int option ;
   subscription : subscription ;
 } [@@deriving sexp]
@@ -134,17 +138,17 @@ type subscription_status = {
 let subscription_status_encoding =
   let open Json_encoding in
   conv
-    (fun { chanid ; status ; pair ; reqid ; subscription } ->
-       ((), reqid, status, chanid, Pair.to_string pair, subscription))
-    (fun ((), reqid, status, chanid, pair, subscription) ->
-       let pair = Pair.of_string_exn pair in
-       { reqid ; status ; chanid ; pair ; subscription })
-  (obj6
+    (fun { chanid ; name ; pair ; status ; reqid ; subscription } ->
+       ((), reqid, status, chanid, name, pair, subscription))
+    (fun ((), reqid, status, chanid, name, pair, subscription) ->
+       { reqid ; status ; chanid ; name ; pair ; subscription })
+  (obj7
      (req "event" (constant "subscriptionStatus"))
      (opt "reqid" int)
      (req "status" subscriptionStatus_encoding)
      (req "channelID" int)
-     (req "pair" string)
+     (req "channelName" string)
+     (req "pair" Pair.encoding)
      (req "subscription" subscription_encoding))
 
 type error = {
@@ -202,14 +206,6 @@ let ord_type_encoding =
     "m", `market ;
   ]
 
-let msg_encoding encoding =
-  let open Json_encoding in
-  tup2 int (list encoding)
-
-let msg'_encoding encoding =
-  let open Json_encoding in
-  tup2 int encoding
-
 let trade_encoding =
   let open Json_encoding in
   conv
@@ -224,14 +220,20 @@ type book_entry = {
   price: float ;
   qty: float ;
   ts: Ptime.t ;
+  republish: bool ;
 } [@@deriving sexp]
 
 let book_entry_encoding =
   let open Json_encoding in
-  conv
-    (fun { price ; qty ; ts } -> (price, qty, ts))
-    (fun (price, qty, ts) -> { price ; qty ; ts })
-    (tup3 strfloat strfloat Ptime.encoding)
+  union [
+    case (tup3 strfloat strfloat Ptime.encoding)
+      (fun { price ; qty ; ts ; _ } -> Some (price, qty, ts))
+      (fun (price, qty, ts) -> { price ; qty ; ts ; republish = false }) ;
+    case (tup4 strfloat strfloat Ptime.encoding (constant "r"))
+      (function { price ; qty ; ts ; republish } ->
+         if republish then Some (price, qty, ts, ()) else None)
+      (fun (price, qty, ts, ()) -> { price ; qty ; ts ; republish = true }) ;
+  ]
 
 type book = {
   asks : book_entry list ;
@@ -256,14 +258,6 @@ let book_encoding =
        (dft "a" (list book_entry_encoding) [])
        (dft "b" (list book_entry_encoding) []))
 
-let full_book_update_encoding =
-  let open Json_encoding in
-  conv
-    (fun (i, { asks ; bids }) ->
-       (i, { asks ; bids = [] }, { asks = [] ; bids }))
-    (fun (i, { asks ; _ }, { bids ; _ }) -> (i, { asks ; bids }))
-    (tup3 int book_encoding book_encoding)
-
 type t =
   | Ping of int option
   | Pong of int option
@@ -273,14 +267,33 @@ type t =
   | Unsubscribe of unsubscribe
   | Error of error
   | SubscriptionStatus of subscription_status
-  | Trade of int * trade list
-  | Snapshot of int * book
-  | BookUpdate of int * book
+  | Trade of trade list update
+  | Snapshot of book update
+  | BookUpdate of book update
+
+and 'a update = {
+  chanid: int ;
+  feed: string ;
+  pair: Pair.t ;
+  data: 'a ;
+}
 [@@deriving sexp]
 
-let trade (i, t) = Trade (i, t)
-let snapshot (i, t) = Snapshot (i, t)
-let bupdate (i, t) = BookUpdate (i, t)
+let full_book_update_encoding =
+  let open Json_encoding in
+  conv
+    (fun { chanid ; feed ; pair ; data = { asks ; bids } } ->
+       (chanid, { asks ; bids = [] }, { asks = [] ; bids }, feed, pair))
+    (fun (chanid, { asks ; _ }, { bids ; _ }, feed, pair) ->
+       { chanid ; feed ; pair ; data = { asks ; bids } })
+    (tup5 int book_encoding book_encoding string Pair.encoding)
+
+let update_encoding enc =
+  let open Json_encoding in
+  conv
+    (fun { chanid; feed; pair; data } -> (chanid, data, feed, pair))
+    (fun (chanid, data, feed, pair) -> { chanid; feed; pair; data })
+    (tup4 int enc string Pair.encoding)
 
 let pp ppf t =
   Format.fprintf ppf "%a" Sexplib.Sexp.pp_hum (sexp_of_t t)
@@ -319,8 +332,8 @@ let encoding =
     case subscription_status_encoding (function SubscriptionStatus s -> Some s | _ -> None) (fun s -> SubscriptionStatus s) ;
     case subscribe_encoding (function Subscribe v -> Some v | _ -> None) (fun v -> Subscribe v) ;
     case unsubscribe_encoding (function Unsubscribe v -> Some v | _ -> None) (fun v -> Unsubscribe v) ;
-    case (msg_encoding trade_encoding) (function Trade (i, t) -> Some (i, t) | _ -> None) trade ;
-    case (msg'_encoding snap_encoding) (function Snapshot (i, s) -> Some (i, s) | _ -> None) snapshot ;
-    case (msg'_encoding book_encoding) (function BookUpdate (i, s) -> Some (i, s) | _ -> None) bupdate ;
-    case full_book_update_encoding (function BookUpdate (i, s) -> Some (i, s) | _ -> None) bupdate ;
+    case (update_encoding (list trade_encoding)) (function Trade t -> Some t | _ -> None) (fun t -> Trade t) ;
+    case (update_encoding snap_encoding) (function Snapshot s -> Some s | _ -> None) (fun s -> Snapshot s) ;
+    case (update_encoding book_encoding) (function BookUpdate b -> Some b | _ -> None) (fun b -> BookUpdate b) ;
+    case full_book_update_encoding (function BookUpdate b -> Some b | _ -> None) (fun b -> BookUpdate b) ;
   ]

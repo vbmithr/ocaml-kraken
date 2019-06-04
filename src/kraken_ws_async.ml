@@ -4,7 +4,7 @@ open Async
 open Kraken
 open Kraken_ws
 
-let url = Uri.make ~scheme:"https" ~host:"ws.kraken.com" ()
+let url = Uri.make ~scheme:"https" ~host:"ws-beta.kraken.com" ()
 let sandbox_url = Uri.make ~scheme:"https" ~host:"ws-sandbox.kraken.com" ()
 
 let src = Logs.Src.create "kraken.ws.async"
