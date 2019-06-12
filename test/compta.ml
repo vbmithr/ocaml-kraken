@@ -34,15 +34,15 @@ let string_of_ordType = function `order_type_limit -> "limit" | #Kraken.OrdType.
 let sides_encoding =
   let open Kx in
   conv
-    (Array.map ~f:string_of_side)
-    (Array.map ~f:side_of_string)
+    (List.map ~f:string_of_side)
+    (List.map ~f:side_of_string)
     (v sym)
 
 let ordTypes_encoding =
   let open Kx in
   conv
-    (Array.map ~f:string_of_ordType)
-    (Array.map ~f:ordType_of_string)
+    (List.map ~f:string_of_ordType)
+    (List.map ~f:ordType_of_string)
     (v sym)
 
 let line =
@@ -50,8 +50,7 @@ let line =
   t7 (v timestamp) (v sym) (list (s char)) sides_encoding ordTypes_encoding
     (v float) (v float)
 
-let insertFills w fills =
-  let open Kx in
+let kx_of_fills fills =
   let (times,syms,tids,sides,ordTypes,prices,qties) =
     List.fold_right fills ~init:([],[],[],[],[],[],[])
       ~f:begin fun (tid, fill) (times,syms,tids,sides,ordTypes,prices,qties) ->
@@ -63,18 +62,10 @@ let insertFills w fills =
          fill.price :: prices,
          fill.vol :: qties)
       end in
-  let v =
-    construct line Array.(of_list times,
-                          of_list syms,
-                          of_list tids,
-                          of_list sides,
-                          of_list ordTypes,
-                          of_list prices,
-                          of_list qties) in
-  Pipe.write w ("upd", [|v|])
+  Kx_async.create line (times, syms, tids, sides, ordTypes, prices, qties)
 
 let main () =
-  Kx_async.with_connection url ~f:begin fun _r w ->
+  Kx_async.with_connection url ~f:begin fun w ->
     let rec inner n =
       Fastrest.request
         ~auth:{ Fastrest.key = cfg.key ;
@@ -85,7 +76,7 @@ let main () =
           m "%a" (Fastrest.pp_print_error Format.(pp_print_list pp_print_string)) e
         end
       | Ok fills ->
-        insertFills w fills >>= fun () ->
+        Pipe.write w (kx_of_fills fills) >>= fun () ->
         let len = List.length fills in
         Logs_async.app (fun m -> m "Found %d fills" len) >>= fun () ->
         Deferred.List.iter fills ~f:begin fun (str, fill) ->
