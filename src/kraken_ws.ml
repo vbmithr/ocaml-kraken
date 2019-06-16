@@ -187,23 +187,23 @@ type trade = {
   price: float ;
   qty: float ;
   ts: Ptime.t ;
-  side: [`buy|`sell] ;
-  ord_type: [`market|`limit] ;
+  side: [`Buy | `Sell] ;
+  ord_type: [`Market | `Limit] ;
   misc: string ;
 } [@@deriving sexp]
 
 let side_encoding =
   let open Json_encoding in
   string_enum [
-    "b", `buy ;
-    "s", `sell ;
+    "b", `Buy ;
+    "s", `Sell ;
   ]
 
 let ord_type_encoding =
   let open Json_encoding in
   string_enum [
-    "l", `limit ;
-    "m", `market ;
+    "l", `Limit ;
+    "m", `Market ;
   ]
 
 let trade_encoding =
@@ -216,7 +216,7 @@ let trade_encoding =
     (tup6 strfloat strfloat Ptime.encoding
        side_encoding ord_type_encoding string)
 
-type book_entry = {
+type quote = {
   price: float ;
   qty: float ;
   ts: Ptime.t ;
@@ -236,8 +236,8 @@ let book_entry_encoding =
   ]
 
 type book = {
-  asks : book_entry list ;
-  bids : book_entry list ;
+  asks : quote list ;
+  bids : quote list ;
 } [@@deriving sexp]
 
 let snap_encoding =
@@ -269,7 +269,7 @@ type t =
   | SubscriptionStatus of subscription_status
   | Trade of trade list update
   | Snapshot of book update
-  | BookUpdate of book update
+  | Quotes of book update
 
 and 'a update = {
   chanid: int ;
@@ -334,6 +334,6 @@ let encoding =
     case unsubscribe_encoding (function Unsubscribe v -> Some v | _ -> None) (fun v -> Unsubscribe v) ;
     case (update_encoding (list trade_encoding)) (function Trade t -> Some t | _ -> None) (fun t -> Trade t) ;
     case (update_encoding snap_encoding) (function Snapshot s -> Some s | _ -> None) (fun s -> Snapshot s) ;
-    case (update_encoding book_encoding) (function BookUpdate b -> Some b | _ -> None) (fun b -> BookUpdate b) ;
-    case full_book_update_encoding (function BookUpdate b -> Some b | _ -> None) (fun b -> BookUpdate b) ;
+    case (update_encoding book_encoding) (function Quotes b -> Some b | _ -> None) (fun b -> Quotes b) ;
+    case full_book_update_encoding (function Quotes b -> Some b | _ -> None) (fun b -> Quotes b) ;
   ]

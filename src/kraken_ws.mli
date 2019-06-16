@@ -65,12 +65,12 @@ type trade = {
   price: float ;
   qty: float ;
   ts: Ptime.t ;
-  side: [`buy|`sell] ;
-  ord_type: [`market|`limit] ;
+  side: [`Buy | `Sell] ;
+  ord_type: [`Market | `Limit] ;
   misc: string ;
 } [@@deriving sexp]
 
-type book_entry = {
+type quote = {
   price: float ;
   qty: float ;
   ts: Ptime.t ;
@@ -78,8 +78,8 @@ type book_entry = {
 } [@@deriving sexp]
 
 type book = {
-  asks : book_entry list ;
-  bids : book_entry list ;
+  asks : quote list ;
+  bids : quote list ;
 } [@@deriving sexp]
 
 type unsubscribe = {
@@ -98,7 +98,7 @@ type t =
   | SubscriptionStatus of subscription_status
   | Trade of trade list update
   | Snapshot of book update
-  | BookUpdate of book update
+  | Quotes of book update
 
 and 'a update = {
   chanid: int ;
