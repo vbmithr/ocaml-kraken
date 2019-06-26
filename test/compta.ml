@@ -65,7 +65,7 @@ let kx_of_fills fills =
   Kx_async.create line (times, syms, tids, sides, ordTypes, prices, qties)
 
 let main () =
-  Kx_async.with_connection url ~f:begin fun w ->
+  Kx_async.with_connection_async url ~f:begin fun _ w ->
     let rec inner n =
       Fastrest.request
         ~auth:{ Fastrest.key = cfg.key ;
