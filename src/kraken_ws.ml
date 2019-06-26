@@ -107,10 +107,10 @@ type subscribe = {
 
 let trades ?reqid pairs = { reqid ; pairs ; sub = Trade }
 let book10 ?reqid pairs = { reqid ; pairs ; sub = Book 10 }
-let book25 ?reqid pairs = { reqid ; pairs ; sub = Book 10 }
-let book100 ?reqid pairs = { reqid ; pairs ; sub = Book 10 }
-let book500 ?reqid pairs = { reqid ; pairs ; sub = Book 10 }
-let book1000 ?reqid pairs = { reqid ; pairs ; sub = Book 10 }
+let book25 ?reqid pairs = { reqid ; pairs ; sub = Book 25 }
+let book100 ?reqid pairs = { reqid ; pairs ; sub = Book 100 }
+let book500 ?reqid pairs = { reqid ; pairs ; sub = Book 500 }
+let book1000 ?reqid pairs = { reqid ; pairs ; sub = Book 1000 }
 
 let subscribe_encoding =
   let open Json_encoding in
