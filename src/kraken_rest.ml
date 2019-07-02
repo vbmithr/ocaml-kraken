@@ -14,23 +14,26 @@ let result_encoding encoding =
        (req "error" (list string))
        (opt "result" encoding))
 
-let auth service { key ; secret ; _ } =
+let auth srv { key ; secret ; _ } =
+  let ps = match srv.params with
+    | Form ps -> ps
+    | Json (_,_) -> assert false in
   let nonce = Time_ns.(to_int63_ns_since_epoch (now ())) in
-  let params = ("nonce", [Int63.to_string nonce]) :: service.params in
-  let encoded = Uri.encoded_of_query params in
+  let ps = ("nonce", [Int63.to_string nonce]) :: ps in
+  let encoded = Uri.encoded_of_query ps in
   let open Digestif in
   let digest =
     SHA256.(digest_string ((Int63.to_string nonce) ^ encoded) |>
             to_raw_string) in
   let sign =
-    SHA512.(hmac_string ~key:secret (Uri.path service.url ^ digest) |>
+    SHA512.(hmac_string ~key:secret (Uri.path srv.url ^ digest) |>
             to_raw_string) in
   let headers =
     Httpaf.Headers.of_list [
       "API-Key", key ;
       "API-Sign", Base64.encode_exn sign ;
     ] in
-  { params ; headers }
+  { params = Form ps ; headers }
 
 (* type error = {
  *   severity : [`E | `W] ;
