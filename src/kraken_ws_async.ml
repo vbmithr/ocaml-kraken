@@ -12,7 +12,9 @@ module Log = (val Logs.src_log src : Logs.LOG)
 
 let connect ?(sandbox=false) () =
   let url = if sandbox then sandbox_url else url in
-  Fastws_async.connect_ez url >>= fun (r, w, cleaned_up) ->
+  Fastws_async.connect_ez url >>= function
+  | Error _ -> assert false
+  | Ok (r, w, cleaned_up) ->
   let client_read = Pipe.map r ~f:begin fun msg ->
       Ezjsonm_encoding.destruct_safe encoding (Ezjsonm.from_string msg)
     end in

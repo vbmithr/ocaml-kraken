@@ -8,4 +8,5 @@ val connect :
 
 val with_connection :
   ?sandbox:bool ->
-  (t Pipe.Reader.t -> t Pipe.Writer.t -> 'a Deferred.t) -> 'a Deferred.t
+  (t Pipe.Reader.t -> t Pipe.Writer.t -> 'a Deferred.t) ->
+  ('a, [ `Internal of exn | `User_callback of exn | `WS of Fastws_async.error]) result Deferred.t

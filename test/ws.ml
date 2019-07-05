@@ -17,6 +17,9 @@ let process_user_cmd w =
       Pipe.write w (Ping (int_of_string_opt v))
     | "ping" :: _ ->
       Pipe.write w (Ping None)
+    | "tickers" :: pair ->
+      let pairs = List.map ~f:Pair.of_string_exn pair in
+      Pipe.write w (Subscribe (tickers pairs))
     | "trades" :: pair ->
       let pairs = List.map ~f:Pair.of_string_exn pair in
       Pipe.write w (Subscribe (trades pairs))
@@ -51,6 +54,11 @@ let () =
       let () = Logs_async_reporter.set_level_via_param None in
       fun () ->
         Logs.set_reporter (Logs_async_reporter.reporter ()) ;
-        main ()
+        main () >>= function
+        | Ok () -> Deferred.unit
+        | Error (`WS _) -> failwith "WS error"
+        | Error (`Internal exn) -> raise exn
+        | Error (`User_callback exn) -> raise exn
+
     ] end |>
   Command.run

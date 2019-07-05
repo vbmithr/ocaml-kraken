@@ -105,6 +105,7 @@ type subscribe = {
   sub: subscription ;
 } [@@deriving sexp]
 
+let tickers ?reqid pairs = { reqid ; pairs ; sub = Ticker }
 let trades ?reqid pairs = { reqid ; pairs ; sub = Trade }
 let book10 ?reqid pairs = { reqid ; pairs ; sub = Book 10 }
 let book25 ?reqid pairs = { reqid ; pairs ; sub = Book 25 }
@@ -182,6 +183,145 @@ let unsubscribe_encoding =
        (req "event" (constant "unsubscribe"))
        (opt "reqid" int)
        (req "channelID" int))
+type a = {
+  price: float ;
+  wholeLotVolume : int ;
+  lotVolume : float
+} [@@deriving sexp]
+
+let a_encoding =
+  let open Json_encoding in
+  conv
+    (fun { price; wholeLotVolume; lotVolume} -> ( price, wholeLotVolume, lotVolume ))
+    (fun ( price, wholeLotVolume, lotVolume) -> { price; wholeLotVolume; lotVolume })
+    (tup3 strfloat int strfloat)
+
+type b = {
+  price: float ;
+  wholeLotVolume : int ;
+  lotVolume : float
+} [@@deriving sexp]
+
+let b_encoding =
+  let open Json_encoding in
+  conv
+    (fun { price; wholeLotVolume; lotVolume} -> ( price, wholeLotVolume, lotVolume ))
+    (fun ( price, wholeLotVolume, lotVolume) -> { price; wholeLotVolume; lotVolume })
+    (tup3 strfloat int strfloat)
+
+type c = {
+  price: float ;
+  lotVolume : float
+} [@@deriving sexp]
+
+let c_encoding =
+  let open Json_encoding in
+  conv
+    (fun { price; lotVolume} -> ( price, lotVolume ))
+    (fun ( price, lotVolume) -> { price; lotVolume })
+    (tup2 strfloat strfloat)
+
+type v = {
+  today: float ;
+  last24Hours: float
+} [@@deriving sexp]
+
+let v_encoding =
+  let open Json_encoding in
+  conv
+    (fun { today; last24Hours } -> ( today, last24Hours ))
+    (fun ( today, last24Hours ) -> { today; last24Hours })
+    (tup2 strfloat strfloat)
+
+type p = {
+  today: float ;
+  last24Hours: float
+} [@@deriving sexp]
+
+let p_encoding =
+  let open Json_encoding in
+  conv
+    (fun { today; last24Hours } -> ( today, last24Hours ))
+    (fun ( today, last24Hours ) -> { today; last24Hours })
+    (tup2 strfloat strfloat)
+
+type ti = {
+  today: int ;
+  last24Hours: int
+} [@@deriving sexp]
+
+let ti_encoding =
+  let open Json_encoding in
+  conv
+    (fun { today; last24Hours } -> ( today, last24Hours ))
+    (fun ( today, last24Hours ) -> { today; last24Hours })
+    (tup2 int int)
+
+type l = {
+  today: float ;
+  last24Hours: float
+} [@@deriving sexp]
+
+let l_encoding =
+  let open Json_encoding in
+  conv
+    (fun { today; last24Hours } -> ( today, last24Hours ))
+    (fun ( today, last24Hours ) -> { today; last24Hours })
+    (tup2 strfloat strfloat)
+
+type h = {
+  today: float ;
+  last24Hours: float
+} [@@deriving sexp]
+
+let h_encoding =
+  let open Json_encoding in
+  conv
+    (fun { today; last24Hours } -> ( today, last24Hours ))
+    (fun ( today, last24Hours ) -> { today; last24Hours })
+    (tup2 strfloat strfloat)
+
+type o = {
+  today: float ;
+  last24Hours: float
+} [@@deriving sexp]
+
+let o_encoding =
+  let open Json_encoding in
+  conv
+    (fun { today; last24Hours } -> ( today, last24Hours ))
+    (fun ( today, last24Hours ) -> { today; last24Hours })
+    (tup2 strfloat strfloat)
+
+type ticker = {
+  a: a;
+  b: b;
+  c: c;
+  v: v;
+  p: p;
+  t: ti;
+  l: l;
+  h: h;
+  o: o;
+} [@@deriving sexp]
+
+let ticker_encoding =
+  let open Json_encoding in
+  conv
+    (fun { a; b; c; v; p; t; l; h; o } ->
+       (a, b, c, v, p, t, l, h, o ))
+    (fun ( a, b, c, v, p, t, l, h, o ) ->
+       { a; b; c; v; p; t; l; h; o })
+    (obj9
+       (req "a" (a_encoding))
+       (req "b" (b_encoding))
+       (req "c" (c_encoding))
+       (req "v" (v_encoding))
+       (req "p" (p_encoding))
+       (req "t" (ti_encoding))
+       (req "l" (l_encoding))
+       (req "h" (h_encoding))
+       (req "o" (o_encoding)))
 
 type trade = {
   price: float ;
@@ -267,6 +407,7 @@ type t =
   | Unsubscribe of unsubscribe
   | Error of error
   | SubscriptionStatus of subscription_status
+  | Ticker of ticker update
   | Trade of trade list update
   | Snapshot of book update
   | Quotes of book update
@@ -332,6 +473,7 @@ let encoding =
     case subscription_status_encoding (function SubscriptionStatus s -> Some s | _ -> None) (fun s -> SubscriptionStatus s) ;
     case subscribe_encoding (function Subscribe v -> Some v | _ -> None) (fun v -> Subscribe v) ;
     case unsubscribe_encoding (function Unsubscribe v -> Some v | _ -> None) (fun v -> Unsubscribe v) ;
+    case (update_encoding ticker_encoding) (function Ticker t -> Some t | _ -> None) (fun t -> Ticker t) ;
     case (update_encoding (list trade_encoding)) (function Trade t -> Some t | _ -> None) (fun t -> Trade t) ;
     case (update_encoding snap_encoding) (function Snapshot s -> Some s | _ -> None) (fun s -> Snapshot s) ;
     case (update_encoding book_encoding) (function Quotes b -> Some b | _ -> None) (fun b -> Quotes b) ;
