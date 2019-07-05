@@ -183,6 +183,7 @@ let unsubscribe_encoding =
        (req "event" (constant "unsubscribe"))
        (opt "reqid" int)
        (req "channelID" int))
+
 type a = {
   price: float ;
   wholeLotVolume : int ;
