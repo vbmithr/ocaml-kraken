@@ -35,6 +35,7 @@ type subscribe = {
   sub: subscription ;
 }
 
+val tickers : ?reqid:int -> Pair.t list -> subscribe
 val trades : ?reqid:int -> Pair.t list -> subscribe
 val book10 : ?reqid:int -> Pair.t list -> subscribe
 val book25 : ?reqid:int -> Pair.t list -> subscribe
@@ -59,6 +60,65 @@ type subscription_status = {
 type error = {
   reqid : int option ;
   msg : string
+} [@@deriving sexp]
+
+type a = {
+  price: float ;
+  wholeLotVolume : int ;
+  lotVolume : float
+} [@@deriving sexp]
+
+type b = {
+  price: float ;
+  wholeLotVolume : int ;
+  lotVolume : float
+} [@@deriving sexp]
+
+type c = {
+  price: float ;
+  lotVolume : float
+} [@@deriving sexp]
+
+type v = {
+  today: float ;
+  last24Hours: float
+} [@@deriving sexp]
+
+type p = {
+  today: float ;
+  last24Hours: float
+} [@@deriving sexp]
+
+type ti = {
+  today: int;
+  last24Hours: int
+} [@@deriving sexp]
+
+type l = {
+  today: float ;
+  last24Hours: float
+} [@@deriving sexp]
+
+type h = {
+  today: float ;
+  last24Hours: float
+} [@@deriving sexp]
+
+type o = {
+  today: float ;
+  last24Hours: float
+} [@@deriving sexp]
+
+type ticker = {
+  a: a ;
+  b: b ;
+  c: c ;
+  v: v ;
+  p: p ;
+  t: ti;
+  l: l ;
+  h: h ;
+  o: o ;
 } [@@deriving sexp]
 
 type trade = {
@@ -96,6 +156,7 @@ type t =
   | Unsubscribe of unsubscribe
   | Error of error
   | SubscriptionStatus of subscription_status
+  | Ticker of ticker update
   | Trade of trade list update
   | Snapshot of book update
   | Quotes of book update

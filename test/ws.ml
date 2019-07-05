@@ -16,6 +16,9 @@ let process_user_cmd w =
       Pipe.write w (Ping (int_of_string_opt v))
     | "ping" :: _ ->
       Pipe.write w (Ping None)
+    | "tickers" :: pair ->
+      let pairs = List.map ~f:Pair.of_string_exn pair in
+      Pipe.write w (Subscribe (tickers pairs))
     | "trades" :: pair ->
       let pairs = List.map ~f:Pair.of_string_exn pair in
       Pipe.write w (Subscribe (trades pairs))
