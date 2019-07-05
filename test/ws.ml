@@ -59,6 +59,5 @@ let () =
         | Error (`WS _) -> failwith "WS error"
         | Error (`Internal exn) -> raise exn
         | Error (`User_callback exn) -> raise exn
-
     ] end |>
   Command.run
