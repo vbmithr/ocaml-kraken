@@ -4,14 +4,14 @@ open Async
 open Kraken
 open Kraken_ws
 
-let url = Uri.make ~scheme:"https" ~host:"ws-beta.kraken.com" ()
-let sandbox_url = Uri.make ~scheme:"https" ~host:"ws-sandbox.kraken.com" ()
+let url = Uri.make ~scheme:"https" ~host:"ws.kraken.com" ()
+let beta_url = Uri.make ~scheme:"https" ~host:"ws-beta.kraken.com" ()
 
 let src = Logs.Src.create "kraken.ws.async"
 module Log = (val Logs.src_log src : Logs.LOG)
 
-let connect ?(sandbox=false) () =
-  let url = if sandbox then sandbox_url else url in
+let connect ?(beta=false) () =
+  let url = if beta then beta_url else url in
   Fastws_async.connect_ez url >>|
   Result.map ~f:begin fun (r, w, cleaned_up) ->
     let client_read = Pipe.map r ~f:begin fun msg ->
@@ -32,14 +32,14 @@ let connect ?(sandbox=false) () =
     (client_read, client_write, cleaned_up)
   end
 
-let connect_exn ?sandbox () =
-  connect ?sandbox () >>= function
+let connect_exn ?beta () =
+  connect ?beta () >>= function
   | Error `Internal exn -> raise exn
   | Error `WS e -> Fastws_async.raise_error e
   | Ok a -> return a
 
-let with_connection ?(sandbox=false) f =
-  let url = if sandbox then sandbox_url else url in
+let with_connection ?(beta=false) f =
+  let url = if beta then beta_url else url in
   Fastws_async.with_connection_ez url ~f:begin fun r w ->
     let r = Pipe.map r ~f:begin fun msg ->
         Ezjsonm_encoding.destruct_safe encoding (Ezjsonm.from_string msg)
@@ -59,8 +59,8 @@ let with_connection ?(sandbox=false) f =
       ~finally:(fun () -> Pipe.close_read ws_read ; Deferred.unit)
   end
 
-let with_connection_exn ?sandbox f =
-  with_connection ?sandbox f >>= function
+let with_connection_exn ?beta f =
+  with_connection ?beta f >>= function
   | Error `Internal exn -> raise exn
   | Error `User_callback exn -> raise exn
   | Error `WS e -> Fastws_async.raise_error e
