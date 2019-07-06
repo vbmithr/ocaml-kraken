@@ -2,7 +2,6 @@ open Core
 open Async
 
 open Kraken_ws
-open Kraken_ws_async
 
 let src = Logs.Src.create "kraken.ws-test"
     ~doc:"Kraken API - WS test application"
@@ -35,7 +34,7 @@ let process_user_cmd w =
   loop ()
 
 let main () =
-  with_connection begin fun r w ->
+  Kraken_ws_async.with_connection_exn begin fun r w ->
     let log_incoming msg =
       Logs_async.debug ~src (fun m -> m "%a" pp msg) in
     Deferred.all_unit [
