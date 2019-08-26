@@ -27,6 +27,11 @@ end
 module Ptime = struct
   include Ptime
 
+  type date_ = int * int * int [@@deriving sexp]
+
+  let date_of_sexp = date__of_sexp
+  let sexp_of_date = sexp_of_date_
+
   let t_of_sexp sexp =
     let sexp_str = string_of_sexp sexp in
     match of_rfc3339 sexp_str with

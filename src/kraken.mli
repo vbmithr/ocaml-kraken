@@ -9,9 +9,12 @@ module Ptime : sig
   include module type of Ptime
     with type t = Ptime.t
      and type span = Ptime.span
+     and type date = Ptime.date
 
   val t_of_sexp : Sexplib.Sexp.t -> Ptime.t
   val sexp_of_t : Ptime.t -> Sexplib.Sexp.t
+  val date_of_sexp : Sexplib.Sexp.t -> date
+  val sexp_of_date : date -> Sexplib.Sexp.t
   val encoding : t Json_encoding.encoding
 end
 
