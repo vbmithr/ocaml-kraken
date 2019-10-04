@@ -8,8 +8,11 @@ let base_url =
 let result_encoding encoding =
   let open Json_encoding in
   conv
-    (function Error e -> (e, None) | Ok v -> [], Some v)
-    (function (e, None) -> Error e | (_, Some r) -> Ok r)
+    (fun _ -> assert false)
+    (function
+      | (e, None) ->
+        Error Error.(of_list (List.map ~f:of_string e))
+      | (_, Some r) -> Ok r)
     (obj2
        (req "error" (list string))
        (opt "result" encoding))
@@ -34,13 +37,6 @@ let auth srv { key ; secret ; _ } =
       "API-Sign", Base64.encode_exn sign ;
     ] in
   { params = Form ps ; headers }
-
-(* type error = {
- *   severity : [`E | `W] ;
- *   cat : string ;
- *   msg : string ;
- *   extra : string option ;
- * } *)
 
 let time =
   let time_encoding =

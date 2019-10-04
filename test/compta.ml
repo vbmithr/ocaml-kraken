@@ -65,16 +65,13 @@ let kx_of_fills fills =
   Kx_async.create line (times, syms, tids, sides, ordTypes, prices, qties)
 
 let main () =
-  Kx_async.with_connection_async url ~f:begin fun _ w ->
+  Kx_async.Async.with_connection url ~f:begin fun { w; _ } ->
     let rec inner n =
       Fastrest.request
         ~auth:{ Fastrest.key = cfg.key ;
                 secret = Base64.decode_exn cfg.secret ;
                 meta = [] } (Kraken_rest.trade_history n) >>= function
-      | Error e ->
-        Log_async.err begin fun m ->
-          m "%a" (Fastrest.pp_print_error Format.(pp_print_list pp_print_string)) e
-        end
+      | Error e -> Log_async.err (fun m -> m "%a" Error.pp e)
       | Ok fills ->
         Pipe.write w (kx_of_fills fills) >>= fun () ->
         let len = List.length fills in
