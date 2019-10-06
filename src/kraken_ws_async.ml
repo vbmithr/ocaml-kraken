@@ -12,8 +12,8 @@ module Log = (val Logs.src_log src : Logs.LOG)
 
 let connect ?(beta=false) () =
   let url = if beta then beta_url else url in
-  Fastws_async.connect_ez url >>|
-  Result.map ~f:begin fun (r, w, cleaned_up) ->
+  Deferred.Or_error.map (Fastws_async.EZ.connect url)
+    ~f:begin fun { r; w; cleaned_up } ->
     let client_read = Pipe.map r ~f:begin fun msg ->
         Ezjsonm_encoding.destruct_safe encoding (Ezjsonm.from_string msg)
       end in
@@ -34,13 +34,12 @@ let connect ?(beta=false) () =
 
 let connect_exn ?beta () =
   connect ?beta () >>= function
-  | Error `Internal exn -> raise exn
-  | Error `WS e -> Fastws_async.raise_error e
+  | Error e -> Error.raise e
   | Ok a -> return a
 
 let with_connection ?(beta=false) f =
   let url = if beta then beta_url else url in
-  Fastws_async.with_connection_ez url ~f:begin fun r w ->
+  Fastws_async.EZ.with_connection url ~f:begin fun r w ->
     let r = Pipe.map r ~f:begin fun msg ->
         Ezjsonm_encoding.destruct_safe encoding (Ezjsonm.from_string msg)
       end in
@@ -61,7 +60,5 @@ let with_connection ?(beta=false) f =
 
 let with_connection_exn ?beta f =
   with_connection ?beta f >>= function
-  | Error `Internal exn -> raise exn
-  | Error `User_callback exn -> raise exn
-  | Error `WS e -> Fastws_async.raise_error e
+  | Error e -> Error.raise e
   | Ok a -> return a
