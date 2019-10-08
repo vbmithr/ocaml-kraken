@@ -50,7 +50,7 @@ let () =
   Command.async ~summary:"Kraken WS client" begin
     let open Command.Let_syntax in
     [%map_open
-      let () = Logs_async_reporter.set_level_via_param None in
+      let () = Logs_async_reporter.set_level_via_param [] in
       fun () ->
         Logs.set_reporter (Logs_async_reporter.reporter ()) ;
         main ()
