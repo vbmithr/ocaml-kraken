@@ -25,11 +25,11 @@ open Kraken
 
 let url = Uri.make ~scheme:"kdb" ~host:"localhost" ~port:5042 ()
 
-let side_of_string = function "buy" -> `buy | _ -> `sell
-let string_of_side = function `buy -> "buy" | `sell -> "sell"
+let side_of_string = function "buy" -> Fixtypes.Side.Buy | _ -> Sell
+let string_of_side = function Fixtypes.Side.Buy -> "buy" | Sell -> "sell"
 
-let ordType_of_string = function "limit" -> `order_type_limit | _ -> `order_type_market
-let string_of_ordType = function `order_type_limit -> "limit" | #Kraken.OrdType.t -> "market"
+let ordType_of_string = function "limit" -> Fixtypes.OrdType.Limit | _ -> Market
+let string_of_ordType = function Fixtypes.OrdType.Limit -> "limit" | _ -> "market"
 
 let sides_encoding =
   let open Kx in

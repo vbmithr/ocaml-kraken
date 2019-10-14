@@ -19,26 +19,12 @@ module Ptime : sig
 end
 
 module OrdType : sig
-  type t = [
-    | `order_type_unset
-    | `order_type_market
-    | `order_type_limit
-    | `order_type_stop
-    | `order_type_stop_limit
-    | `order_type_market_if_touched
-  ] [@@deriving sexp]
-
+  type t = Fixtypes.OrdType.t [@@deriving sexp]
   val encoding : t Json_encoding.encoding
 end
 
 module OrdStatus : sig
-  type t = [
-      | `order_status_pending_open
-      | `order_status_open
-      | `order_status_filled
-      | `order_status_canceled
-    ]
-
+  type t = Fixtypes.OrdStatus.t
   val encoding : t Json_encoding.encoding
 end
 
@@ -61,7 +47,7 @@ end
 module Order : sig
   type descr = {
     pair: string ;
-    side: [`buy | `sell] ;
+    side: Fixtypes.Side.t ;
     ord_type: OrdType.t ;
     price: float ;
     price2: float ;
@@ -98,7 +84,7 @@ module Filled_order : sig
     postxid: string option ;
     pair: string ;
     time: Ptime.t ;
-    side: [`buy | `sell] ;
+    side: Fixtypes.Side.t ;
     ord_type: OrdType.t ;
     price: float ;
     cost: float ;

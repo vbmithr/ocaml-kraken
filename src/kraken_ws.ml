@@ -328,23 +328,23 @@ type trade = {
   price: float ;
   qty: float ;
   ts: Ptime.t ;
-  side: [`Buy | `Sell] ;
-  ord_type: [`Market | `Limit] ;
+  side: Fixtypes.Side.t ;
+  ord_type: Fixtypes.OrdType.t ;
   misc: string ;
 } [@@deriving sexp]
 
 let side_encoding =
   let open Json_encoding in
   string_enum [
-    "b", `Buy ;
-    "s", `Sell ;
+    "b", Fixtypes.Side.Buy ;
+    "s", Sell ;
   ]
 
 let ord_type_encoding =
   let open Json_encoding in
   string_enum [
-    "l", `Limit ;
-    "m", `Market ;
+    "l", Fixtypes.OrdType.Limit ;
+    "m", Market ;
   ]
 
 let trade_encoding =

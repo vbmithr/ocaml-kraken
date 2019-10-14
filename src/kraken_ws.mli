@@ -125,8 +125,8 @@ type trade = {
   price: float ;
   qty: float ;
   ts: Ptime.t ;
-  side: [`Buy | `Sell] ;
-  ord_type: [`Market | `Limit] ;
+  side: Fixtypes.Side.t ;
+  ord_type: Fixtypes.OrdType.t ;
   misc: string ;
 } [@@deriving sexp]
 
