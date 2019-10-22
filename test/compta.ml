@@ -70,17 +70,15 @@ let main () =
       Fastrest.request
         ~auth:{ Fastrest.key = cfg.key ;
                 secret = Base64.decode_exn cfg.secret ;
-                meta = [] } (Kraken_rest.trade_history n) >>= function
-      | Error e -> Log_async.err (fun m -> m "%a" Error.pp e)
-      | Ok fills ->
-        Pipe.write w (kx_of_fills fills) >>= fun () ->
-        let len = List.length fills in
-        Logs_async.app (fun m -> m "Found %d fills" len) >>= fun () ->
-        Deferred.List.iter fills ~f:begin fun (str, fill) ->
-          Log_async.app (fun m -> m "%s %a" str Filled_order.pp fill)
-        end >>= fun () ->
-        if len < 50 then Deferred.unit
-        else inner (n + len) in
+                meta = [] } (Kraken_rest.trade_history n) >>=? fun fills ->
+      Pipe.write w (kx_of_fills fills) >>= fun () ->
+      let len = List.length fills in
+      Logs_async.app (fun m -> m "Found %d fills" len) >>= fun () ->
+      Deferred.List.iter fills ~f:begin fun (str, fill) ->
+        Log_async.app (fun m -> m "%s %a" str Filled_order.pp fill)
+      end >>= fun () ->
+      if len < 50 then Deferred.Or_error.ok_unit
+      else inner (n + len) in
     inner 0
   end >>= fun _ ->
   Deferred.unit
