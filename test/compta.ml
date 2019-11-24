@@ -34,15 +34,15 @@ let string_of_ordType = function Fixtypes.OrdType.Limit -> "limit" | _ -> "marke
 let sides_encoding =
   let open Kx in
   conv
-    (List.map ~f:string_of_side)
-    (List.map ~f:side_of_string)
+    (Array.map ~f:string_of_side)
+    (Array.map ~f:side_of_string)
     (v sym)
 
 let ordTypes_encoding =
   let open Kx in
   conv
-    (List.map ~f:string_of_ordType)
-    (List.map ~f:ordType_of_string)
+    (Array.map ~f:string_of_ordType)
+    (Array.map ~f:ordType_of_string)
     (v sym)
 
 let line =
@@ -62,7 +62,8 @@ let kx_of_fills fills =
          fill.price :: prices,
          fill.vol :: qties)
       end in
-  Kx_async.create line (times, syms, tids, sides, ordTypes, prices, qties)
+  Kx_async.create line Array.(of_list times, of_list syms, tids, of_list sides,
+                              of_list ordTypes, of_list prices, of_list qties)
 
 let main () =
   Kx_async.Async.with_connection url ~f:begin fun { w; _ } ->
