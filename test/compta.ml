@@ -62,7 +62,7 @@ let kx_of_fills fills =
          fill.price :: prices,
          fill.vol :: qties)
       end in
-  Kx_async.create line Array.(of_list times, of_list syms, tids, of_list sides,
+  Kx_async.create line Array.(of_list times, of_list syms, of_list tids, of_list sides,
                               of_list ordTypes, of_list prices, of_list qties)
 
 let main () =
