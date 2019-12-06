@@ -1,14 +1,13 @@
 open Sexplib.Std
+open Json_encoding
 
 let strfloat =
-  let open Json_encoding in
   union [
     case float (fun s -> Some s) (fun s -> s) ;
     case string (fun s -> Some (string_of_float s)) float_of_string ;
   ]
 
 let side_encoding =
-  let open Json_encoding in
   string_enum [
     "buy", Fixtypes.Side.Buy ;
     "sell", Sell ;
@@ -42,7 +41,6 @@ module Ptime = struct
     sexp_of_string (to_rfc3339 t)
 
   let encoding =
-    let open Json_encoding in
     conv
       Ptime.to_float_s
       (fun ts -> match Ptime.of_float_s ts with
@@ -55,7 +53,6 @@ module OrdType = struct
   type t = Fixtypes.OrdType.t [@@deriving sexp]
 
   let encoding =
-    let open Json_encoding in
     string_enum [
       "market", Fixtypes.OrdType.Market ;
       "limit", Limit ;
@@ -69,7 +66,6 @@ module OrdStatus = struct
   type t = Fixtypes.OrdStatus.t [@@deriving sexp]
 
   let encoding =
-    let open Json_encoding in
     string_enum [
       "pending", Fixtypes.OrdStatus.PendingNew ;
       "open", New ;
@@ -95,7 +91,6 @@ module Balance = struct
     Format.fprintf ppf "%a" Sexplib.Sexp.pp (sexp_of_t t)
 
   let encoding =
-    let open Json_encoding in
     conv
       (fun { equivalent_balance ;
              trade_balance ; total_margin ;
@@ -135,7 +130,6 @@ module Order = struct
   } [@@deriving sexp]
 
   let descr_encoding =
-    let open Json_encoding in
     conv
       (fun { pair ; side ; ord_type ; price ;
              price2 ; leverage ; order ; close } ->
@@ -177,7 +171,6 @@ module Order = struct
     Format.fprintf ppf "%a" Sexplib.Sexp.pp (sexp_of_t t)
 
   let otherfields_encoding =
-    let open Json_encoding in
     obj4
       (req "descr" descr_encoding)
       (req "status" OrdStatus.encoding)
@@ -185,7 +178,6 @@ module Order = struct
       (req "oflags" string)
 
   let times_encoding =
-    let open Json_encoding in
     obj4
       (opt "opentm" Ptime.encoding)
       (opt "closetm" Ptime.encoding)
@@ -193,7 +185,6 @@ module Order = struct
       (opt "expiretm" Ptime.encoding)
 
   let floats_encoding =
-    let open Json_encoding in
     obj7
       (req "vol" strfloat)
       (req "vol_exec" strfloat)
@@ -204,7 +195,6 @@ module Order = struct
       (opt "limitprice" strfloat)
 
   let encoding =
-    let open Json_encoding in
     conv
       (fun { status ; opentm ; closetm ; starttm ; expiretm ;
              descr ; vol ; vol_exec ; cost ; fee ; price ;
@@ -247,7 +237,6 @@ module Filled_order = struct
     Format.fprintf ppf "%a" Sexplib.Sexp.pp (sexp_of_t t)
 
   let encoding =
-    let open Json_encoding in
     conv
       (fun { ordertxid ; postxid ; pair ; time ; side ; ord_type ;
              price ; cost ; fee ; vol ; margin ; misc } ->
@@ -274,8 +263,8 @@ end
 
 type aclass = [`currency] [@@deriving sexp]
 
-let aclass_encoding =
-  Json_encoding.string_enum ["currency", `currency]
+let aclass =
+  string_enum ["currency", `currency]
 
 module Ledger = struct
   type t = {
@@ -293,7 +282,6 @@ module Ledger = struct
     Format.fprintf ppf "%a" Sexplib.Sexp.pp (sexp_of_t t)
 
   let typ_encoding =
-    let open Json_encoding in
     string_enum [
       "deposit", `deposit ;
       "withdrawal", `withdrawal ;
@@ -303,7 +291,6 @@ module Ledger = struct
     ]
 
   let encoding =
-    let open Json_encoding in
     conv
       (fun { refid ; time ; typ ; aclass ; asset ; amount ; fee ; balance } ->
          (refid, time, typ, aclass, asset, amount, fee, balance))
@@ -313,7 +300,7 @@ module Ledger = struct
          (req "refid" string)
          (req "time" Ptime.encoding)
          (req "type" typ_encoding)
-         (req "aclass" aclass_encoding)
+         (req "aclass" aclass)
          (req "asset" string)
          (req "amount" strfloat)
          (req "fee" strfloat)
@@ -335,7 +322,6 @@ module Pair = struct
     Format.fprintf ppf "%a" Sexplib.Sexp.pp (sexp_of_t t)
 
   let encoding =
-    let open Json_encoding in
     conv
       (fun { altname ; wsname ; aclass_base ; base ; aclass_quote ; quote ; pair_decimals } ->
          ((), (altname, wsname, aclass_base, base, aclass_quote, quote, pair_decimals)))
@@ -345,9 +331,9 @@ module Pair = struct
          (obj7
             (req "altname" string)
             (opt "wsname" string)
-            (req "aclass_base" aclass_encoding)
+            (req "aclass_base" aclass)
             (req "base" string)
-            (req "aclass_quote" aclass_encoding)
+            (req "aclass_quote" aclass)
             (req "quote" string)
             (req "pair_decimals" int)))
 end

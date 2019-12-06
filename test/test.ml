@@ -32,7 +32,7 @@ let wrap_request ?(speed=`Quick) n service =
   Alcotest_async.test_case n speed begin fun () ->
     Fastrest.request ~auth service >>= function
     | Ok _v -> Deferred.unit
-    | Error _ -> failwith ""
+    | Error e -> Error.raise e
   end
 
 let rest = [
@@ -43,6 +43,13 @@ let rest = [
   wrap_request "trade_history" (trade_history 0) ;
   wrap_request "AssetPairs" asset_pairs ;
   wrap_request "ledgers" ledgers ;
+  wrap_request "DepositMethodsEUR"  (deposit_methods ~asset:"EUR") ;
+  wrap_request "DepositMethodsBTC"  (deposit_methods ~asset:"XBT") ;
+  wrap_request "DepositMethodsXTZ"  (deposit_methods ~asset:"XTZ") ;
+  wrap_request "DepositAddresses"  (deposit_addresses ~asset:"XBT" ~meth:"Bitcoin") ;
+  wrap_request "DepositStatusXBT"  (deposit_status ~asset:"XBT" ~meth:"Bitcoin") ;
+  wrap_request "DepositStatusXTZ"  (deposit_status ~asset:"XTZ" ~meth:"XTZ") ;
+  (* wrap_request "WithdrawStatus"  (withdraw_status ~asset:"XBT" ~meth:"Bitcoin") ; *)
 ]
 
 let () =

@@ -1,8 +1,10 @@
-val strfloat : float Json_encoding.encoding
+open Json_encoding
+
+val strfloat : float encoding
 
 module Ezjsonm_encoding : sig
   include module type of Json_encoding.Make(Json_repr.Ezjsonm)
-  val destruct_safe : 'a Json_encoding.encoding -> Ezjsonm.value -> 'a
+  val destruct_safe : 'a encoding -> Ezjsonm.value -> 'a
 end
 
 module Ptime : sig
@@ -15,17 +17,17 @@ module Ptime : sig
   val sexp_of_t : Ptime.t -> Sexplib.Sexp.t
   val date_of_sexp : Sexplib.Sexp.t -> date
   val sexp_of_date : date -> Sexplib.Sexp.t
-  val encoding : t Json_encoding.encoding
+  val encoding : t encoding
 end
 
 module OrdType : sig
   type t = Fixtypes.OrdType.t [@@deriving sexp]
-  val encoding : t Json_encoding.encoding
+  val encoding : t encoding
 end
 
 module OrdStatus : sig
   type t = Fixtypes.OrdStatus.t
-  val encoding : t Json_encoding.encoding
+  val encoding : t encoding
 end
 
 module Balance : sig
@@ -41,7 +43,7 @@ module Balance : sig
   } [@@deriving sexp]
 
   val pp : Format.formatter -> t -> unit
-  val encoding : t Json_encoding.encoding
+  val encoding : t encoding
 end
 
 module Order : sig
@@ -75,7 +77,7 @@ module Order : sig
   } [@@deriving sexp]
 
   val pp : Format.formatter -> t -> unit
-  val encoding : t Json_encoding.encoding
+  val encoding : t encoding
 end
 
 module Filled_order : sig
@@ -95,10 +97,11 @@ module Filled_order : sig
   } [@@deriving sexp]
 
   val pp : Format.formatter -> t -> unit
-  val encoding : t Json_encoding.encoding
+  val encoding : t encoding
 end
 
 type aclass = [`currency]
+val aclass : aclass encoding
 
 module Ledger : sig
   type t = {
@@ -113,7 +116,7 @@ module Ledger : sig
   } [@@deriving sexp]
 
   val pp : Format.formatter -> t -> unit
-  val encoding : t Json_encoding.encoding
+  val encoding : t encoding
 end
 
 module Pair : sig
@@ -128,5 +131,5 @@ module Pair : sig
   } [@@deriving sexp]
 
   val pp : Format.formatter -> t -> unit
-  val encoding : t Json_encoding.encoding
+  val encoding : t encoding
 end
