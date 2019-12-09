@@ -1,6 +1,8 @@
 open Core
 open Async
+open Alcotest
 
+open Kraken
 open Kraken_rest
 
 module Cfg = struct
@@ -19,10 +21,6 @@ let cfg =
   List.Assoc.find_exn ~equal:String.equal
     (Sexplib.Sexp.load_sexp_conv_exn default_cfg Cfg.t_of_sexp) "KRAKEN"
 
-let () =
-  Logs.set_reporter (Logs_async_reporter.reporter ()) ;
-  Logs.set_level (Some Debug)
-
 let wrap_request ?(speed=`Quick) n service =
   let auth = {
     Fastrest.key = cfg.Cfg.key ;
@@ -35,13 +33,38 @@ let wrap_request ?(speed=`Quick) n service =
     | Error e -> Error.raise e
   end
 
+let partial_rt n =
+  let open KrakID in
+  let s' = Bytes.create 8 in
+  for _ = 0 to n do
+    let s = String.init 7 ~f:(fun _ -> chr (Random.int 36)) in
+    let i = int_of_4 s 3 in
+    chars_of_int s' 3 i ;
+    let s = String.sub s ~pos:3 ~len:4 in
+    check string s s Bytes.(unsafe_to_string ~no_mutation_while_string_reachable:(sub s' ~pos:3 ~len:4))
+  done
+
+let roundtrip ss =
+  List.iter ss ~f:begin fun s ->
+    let s' = KrakID.(to_string (of_string s)) in
+    check string s s s'
+  end
+
+let krakid = [
+  Alcotest.test_case "basic" `Quick (fun () -> ignore (partial_rt 10000)) ;
+  Alcotest.test_case "roundtrip" `Quick (fun () -> roundtrip ["BMBSASZ-E3ZQEE-JB3US4";
+                                                              "L7V3M2-CH7MR-WMPRR7";
+                                                              "L7V3M2-CH7MR-WMPRR7";
+                                                              "RMB4MTB-O5XAS-2EWPSX"])
+]
+
 let rest = [
   wrap_request "time" time ;
+  wrap_request "AssetPairs" asset_pairs ;
   wrap_request "account_balance" account_balance ;
   wrap_request "trade_balance" trade_balance ;
   wrap_request "closed_orders" (closed_orders 0) ;
   wrap_request "trade_history" (trade_history 0) ;
-  wrap_request "AssetPairs" asset_pairs ;
   wrap_request "ledgers" ledgers ;
   wrap_request "DepositMethodsEUR"  (deposit_methods ~asset:"EUR") ;
   wrap_request "DepositMethodsBTC"  (deposit_methods ~asset:"XBT") ;
@@ -53,6 +76,9 @@ let rest = [
 ]
 
 let () =
+  Logs.set_reporter (Logs_async_reporter.reporter ()) ;
+  Logs.set_level (Some Debug) ;
   Alcotest.run "kraken" [
+    "krakid", krakid ;
     "rest", rest ;
   ]

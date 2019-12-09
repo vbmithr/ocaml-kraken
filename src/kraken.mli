@@ -1,5 +1,29 @@
 open Json_encoding
 
+module KrakID : sig
+  type kind =
+    | Order
+    | Deposit
+    | Withdrawal
+    | Trade
+    | Ledger
+
+  type t
+
+  val kind : t -> kind
+  val of_string : string -> t
+  val to_string : t -> string
+  val pp : t Fmt.t
+  val encoding : t encoding
+  val guid : t -> Uuidm.t
+
+  (**/**)
+  val idx : char -> int
+  val chr : int -> char
+  val int_of_4 : string -> int -> int
+  val chars_of_int : bytes -> int -> int -> unit
+end
+
 val strfloat : float encoding
 
 module Ezjsonm_encoding : sig
@@ -82,8 +106,8 @@ end
 
 module Filled_order : sig
   type t = {
-    ordertxid: string ;
-    postxid: string option ;
+    ordertxid: KrakID.t ;
+    postxid: KrakID.t option ;
     pair: string ;
     time: Ptime.t ;
     side: Fixtypes.Side.t ;
@@ -94,7 +118,7 @@ module Filled_order : sig
     vol: float ;
     margin: float ;
     misc: string ;
-  } [@@deriving sexp]
+  } [@@deriving sexp_of]
 
   val pp : Format.formatter -> t -> unit
   val encoding : t encoding
@@ -105,7 +129,7 @@ val aclass : aclass encoding
 
 module Ledger : sig
   type t = {
-    refid : string ;
+    refid : KrakID.t ;
     time : Ptime.t ;
     typ : [`deposit|`withdrawal|`trade|`margin|`transfer] ;
     aclass : aclass ;
@@ -113,7 +137,7 @@ module Ledger : sig
     amount : float ;
     fee : float ;
     balance : float ;
-  } [@@deriving sexp]
+  } [@@deriving sexp_of]
 
   val pp : Format.formatter -> t -> unit
   val encoding : t encoding

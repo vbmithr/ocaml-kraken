@@ -1,6 +1,109 @@
 open Sexplib.Std
 open Json_encoding
 
+module KrakID = struct
+  let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+  let idx = String.index alphabet
+  let chr idx = alphabet.[idx]
+
+  type kind =
+    | Order
+    | Deposit
+    | Withdrawal
+    | Trade
+    | Ledger
+
+  type t = int Array.t
+
+  let guid t =
+    let buf = Bytes.create 16 in
+    Array.iteri (fun i v -> EndianBytes.BigEndian.set_int32 buf (i*4) (Int32.of_int v)) t ;
+    let buf = Bytes.unsafe_to_string buf in
+    Option.get (Uuidm.of_bytes buf)
+
+  let get_firsts t =
+    Array.map (fun v -> try Some (chr (v lsr 24 - 1)) with _ -> None) t
+
+  let length t =
+    if t.(3) lsr 24 > 0 then 20
+    else if t.(2) lsr 24 > 0 then 19
+    else if t.(1) lsr 24 > 0 then 18
+    else 17
+
+  let kind_of_char = function
+    | 'O' -> Order
+    | 'Q' | 'R' -> Deposit
+    | 'A' | 'B' -> Withdrawal
+    | 'T' -> Trade
+    | 'L' -> Ledger
+    | c -> invalid_arg (Printf.sprintf "kind_of_char: %c" c)
+
+  let kind t = kind_of_char (chr (t.(0) lsr 24))
+
+  let int_of_4 s pos =
+    let rec inner mult sum i =
+      if i >= 0 then
+        inner (mult*36) (sum+mult*idx s.[pos+i]) (pred i)
+      else sum
+    in inner 1 0 3
+
+  let chars_of_int buf pos x =
+    let rec inner a i =
+      if i >= 0 then begin
+        Bytes.set buf (pos+i) (chr (a mod 36)) ;
+        inner (a / 36) (pred i)
+      end in
+    inner (x land 0xffffff) 3
+
+  let of_string s =
+    match String.split_on_char '-' s with
+    | [a;b;c] ->
+      let buf = a ^ b ^ c in
+      let _ = kind_of_char a.[0] in
+      let offset = String.length buf - 16 in
+      let res = Array.init 4 (fun i -> int_of_4 buf (offset+i*4)) in
+      for i = 0 to offset - 1 do
+        res.(i) <- res.(i) lor ((1 + idx buf.[i]) lsl 24) ;
+      done ;
+      res
+    | _ -> invalid_arg "KrakID.of_string"
+
+  let to_chars t =
+    let len = length t in
+    let res = Bytes.create len in
+    let firsts = get_firsts t in
+    let offset = len - 16 in
+    Array.iteri (fun i v -> Option.iter (Bytes.set res i) v) firsts ;
+    Array.iteri (fun i v -> chars_of_int res (offset+i*4) v) t ;
+    Bytes.unsafe_to_string res
+
+  let pp ppf t =
+    let buf = to_chars t in
+    match length t with
+    | 17 -> Format.fprintf ppf "%c%c%c%c%c%c-%c%c%c%c%c-%c%c%c%c%c%c"
+              buf.[0] buf.[1] buf.[2] buf.[3] buf.[4] buf.[5]
+              buf.[6] buf.[7] buf.[8] buf.[9] buf.[10]
+              buf.[11] buf.[12] buf.[13] buf.[14] buf.[15] buf.[16]
+    | 18 -> Format.fprintf ppf "%c%c%c%c%c%c%c-%c%c%c%c%c-%c%c%c%c%c%c"
+              buf.[0] buf.[1] buf.[2] buf.[3] buf.[4] buf.[5]
+              buf.[6] buf.[7] buf.[8] buf.[9] buf.[10]
+              buf.[11] buf.[12] buf.[13] buf.[14] buf.[15] buf.[16] buf.[17]
+    | 19 -> Format.fprintf ppf "%c%c%c%c%c%c%c-%c%c%c%c%c%c-%c%c%c%c%c%c"
+              buf.[0] buf.[1] buf.[2] buf.[3] buf.[4] buf.[5]
+              buf.[6] buf.[7] buf.[8] buf.[9] buf.[10]
+              buf.[11] buf.[12] buf.[13] buf.[14] buf.[15] buf.[16] buf.[17] buf.[18]
+    | n -> invalid_arg ("pp: " ^ string_of_int n)
+
+  let to_string t =
+    Format.asprintf "%a" pp t
+
+  let sexp_of_t t = sexp_of_string (to_string t)
+
+  let encoding =
+    conv to_string of_string string
+end
+
 let strfloat =
   union [
     case float (fun s -> Some s) (fun s -> s) ;
@@ -219,8 +322,8 @@ end
 
 module Filled_order = struct
   type t = {
-    ordertxid: string ;
-    postxid: string option ;
+    ordertxid: KrakID.t ;
+    postxid: KrakID.t option ;
     pair: string ;
     time: Ptime.t ;
     side: Fixtypes.Side.t ;
@@ -231,7 +334,7 @@ module Filled_order = struct
     vol: float ;
     margin: float ;
     misc: string ;
-  } [@@deriving sexp]
+  } [@@deriving sexp_of]
 
   let pp ppf t =
     Format.fprintf ppf "%a" Sexplib.Sexp.pp (sexp_of_t t)
@@ -246,7 +349,7 @@ module Filled_order = struct
            price ; cost ; fee ; vol ; margin ; misc })
       (merge_objs
          (obj10
-            (req "ordertxid" string)
+            (req "ordertxid" KrakID.encoding)
             (req "pair" string)
             (req "time" Ptime.encoding)
             (req "type" side_encoding)
@@ -258,7 +361,7 @@ module Filled_order = struct
             (req "margin" strfloat))
          (obj2
             (req "misc" string)
-            (opt "postxid" string)))
+            (opt "postxid" KrakID.encoding)))
 end
 
 type aclass = [`currency] [@@deriving sexp]
@@ -268,7 +371,7 @@ let aclass =
 
 module Ledger = struct
   type t = {
-    refid : string ;
+    refid : KrakID.t ;
     time : Ptime.t ;
     typ : [`deposit|`withdrawal|`trade|`margin|`transfer] ;
     aclass : aclass ;
@@ -276,7 +379,7 @@ module Ledger = struct
     amount : float ;
     fee : float ;
     balance : float ;
-  } [@@deriving sexp]
+  } [@@deriving sexp_of]
 
   let pp ppf t =
     Format.fprintf ppf "%a" Sexplib.Sexp.pp (sexp_of_t t)
@@ -297,7 +400,7 @@ module Ledger = struct
       (fun (refid, time, typ, aclass, asset, amount, fee, balance) ->
          { refid ; time ; typ ; aclass ; asset ; amount ; fee ; balance })
       (obj8
-         (req "refid" string)
+         (req "refid" KrakID.encoding)
          (req "time" Ptime.encoding)
          (req "type" typ_encoding)
          (req "aclass" aclass)

@@ -3,7 +3,15 @@
  (public_name kraken)
  (modules kraken)
  (preprocess (pps ppx_sexp_conv))
- (libraries fixtypes ptime uri ezjsonm ocplib-json-typed))
+ (libraries
+   ocplib-endian
+   fmt
+   uuidm
+   fixtypes
+   ptime
+   uri
+   ezjsonm
+   ocplib-json-typed))
 
 (library
  (name        kraken_rest)
