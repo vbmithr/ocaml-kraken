@@ -104,8 +104,15 @@ let trade_history ofs =
     (result_encoding trade_encoding)
     (Uri.with_path base_url "0/private/TradesHistory")
 
-let ledgers =
-  post_form ~auth (result_encoding ledger_encoding)
+let ledgers ?assets ?typ ?start ?stop ?ofs () =
+  let params = List.filter_opt [
+      Option.map assets ~f:(fun assets -> "assets", assets) ;
+      Option.map typ ~f:(fun typ -> "type", [Ledger.string_of_typ typ]) ;
+      Option.map start ~f:(fun t -> "start", [Float.to_string (Ptime.to_float_s t)]) ;
+      Option.map stop ~f:(fun t -> "end", [Float.to_string (Ptime.to_float_s t)]) ;
+      Option.map ofs ~f:(fun ofs -> "ofs", [Int.to_string ofs]) ;
+  ] in
+  post_form ~params ~auth (result_encoding ledger_encoding)
     (Uri.with_path base_url "0/private/Ledgers")
 
 type deposit_method = {

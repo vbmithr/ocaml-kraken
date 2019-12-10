@@ -75,7 +75,7 @@ let rest = [
   wrap_request "trade_balance" trade_balance ;
   wrap_request "closed_orders" (closed_orders 0) ;
   wrap_request "trade_history" (trade_history 0) ;
-  wrap_request "ledgers" ledgers ;
+  wrap_request "ledgers" (ledgers ()) ;
   wrap_request "DepositMethodsEUR"  (deposit_methods ~asset:"EUR") ;
   wrap_request "DepositMethodsBTC"  (deposit_methods ~asset:"XBT") ;
   wrap_request "DepositMethodsXTZ"  (deposit_methods ~asset:"XTZ") ;

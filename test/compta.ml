@@ -73,22 +73,42 @@ let kx_of_fills fills =
   let open Kx in
   Kx_async.create (t3 (a sym) (a sym) line) ("upd", "trades", (times, syms, tids, sides, ordTypes, pxs, qties))
 
+let auth = {
+  Fastrest.key = cfg.key ;
+  secret = Base64.decode_exn cfg.secret ;
+  meta = []
+}
+
+let retrieveFills w =
+  let rec inner n =
+    Fastrest.request ~auth (Kraken_rest.trade_history n) >>=? fun fills ->
+    Pipe.write w (kx_of_fills fills) >>= fun () ->
+    let len = List.length fills in
+    Logs_async.app (fun m -> m "Found %d fills" len) >>= fun () ->
+    Deferred.List.iter fills ~f:begin fun fill ->
+      Log_async.app (fun m -> m "%a" Filled_order.pp fill)
+    end >>= fun () ->
+    if len < 50 then Deferred.Or_error.ok_unit
+    else inner (n + len) in
+  inner 0
+
+let retrieveLedgers _w =
+  let rec inner n =
+    Fastrest.request ~auth (Kraken_rest.ledgers ~ofs:n ()) >>=? fun ledgers ->
+    (* Pipe.write w (kx_of_fills fills) >>= fun () -> *)
+    let len = List.length ledgers in
+    Logs_async.app (fun m -> m "Found %d ledger entries" len) >>= fun () ->
+    Deferred.List.iter ledgers ~f:begin fun l ->
+      Log_async.app (fun m -> m "%a" Ledger.pp l)
+    end >>= fun () ->
+    if len < 50 then Deferred.Or_error.ok_unit
+    else inner (n + len) in
+  inner 0
+
 let main () =
   Kx_async.Async.with_connection url ~f:begin fun { w; _ } ->
-    let rec inner n =
-      Fastrest.request
-        ~auth:{ Fastrest.key = cfg.key ;
-                secret = Base64.decode_exn cfg.secret ;
-                meta = [] } (Kraken_rest.trade_history n) >>=? fun fills ->
-      Pipe.write w (kx_of_fills fills) >>= fun () ->
-      let len = List.length fills in
-      Logs_async.app (fun m -> m "Found %d fills" len) >>= fun () ->
-      Deferred.List.iter fills ~f:begin fun fill ->
-        Log_async.app (fun m -> m "%a" Filled_order.pp fill)
-      end >>= fun () ->
-      if len < 50 then Deferred.Or_error.ok_unit
-      else inner (n + len) in
-    inner 0
+    retrieveFills w >>=? fun () ->
+    retrieveLedgers w
   end >>= fun _ ->
   Deferred.unit
 

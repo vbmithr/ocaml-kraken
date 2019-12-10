@@ -375,11 +375,33 @@ let aclass =
   string_enum ["currency", `currency]
 
 module Ledger = struct
+  type typ =
+    | Deposit
+    | Withdrawal
+    | Trade
+    | Margin
+    | Transfer [@@deriving sexp]
+
+  let string_of_typ = function
+    | Deposit -> "deposit"
+    | Withdrawal -> "withdrawal"
+    | Trade -> "trade"
+    | Margin -> "margin"
+    | Transfer -> "transfer"
+
+  let typ = string_enum [
+      "deposit", Deposit ;
+      "withdrawal", Withdrawal ;
+      "trade", Trade ;
+      "margin", Margin ;
+      "transfer", Transfer ;
+    ]
+
   type t = {
     id: KrakID.t ;
     refid : KrakID.t ;
     time : Ptime.t ;
-    typ : [`deposit|`withdrawal|`trade|`margin|`transfer] ;
+    typ : typ ;
     aclass : aclass ;
     asset : string ;
     amount : float ;
@@ -390,15 +412,6 @@ module Ledger = struct
   let pp ppf t =
     Format.fprintf ppf "%a" Sexplib.Sexp.pp (sexp_of_t t)
 
-  let typ_encoding =
-    string_enum [
-      "deposit", `deposit ;
-      "withdrawal", `withdrawal ;
-      "trade", `trade ;
-      "margin", `margin ;
-      "transfer", `transfer ;
-    ]
-
   let encoding id =
     conv (fun _ -> assert false)
       (fun (refid, time, typ, aclass, asset, amount, fee, balance) ->
@@ -406,7 +419,7 @@ module Ledger = struct
       (obj8
          (req "refid" KrakID.encoding)
          (req "time" Ptime.encoding)
-         (req "type" typ_encoding)
+         (req "type" typ)
          (req "aclass" aclass)
          (req "asset" string)
          (req "amount" strfloat)

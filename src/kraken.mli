@@ -132,11 +132,20 @@ type aclass = [`currency]
 val aclass : aclass encoding
 
 module Ledger : sig
+  type typ =
+    | Deposit
+    | Withdrawal
+    | Trade
+    | Margin
+    | Transfer [@@deriving sexp]
+
+  val string_of_typ : typ -> string
+
   type t = {
     id: KrakID.t ;
     refid : KrakID.t ;
     time : Ptime.t ;
-    typ : [`deposit|`withdrawal|`trade|`margin|`transfer] ;
+    typ : typ ;
     aclass : aclass ;
     asset : string ;
     amount : float ;
