@@ -22,9 +22,9 @@ module KrakID = struct
   let of_guid u =
     let s = Uuidm.to_bytes u in
     let a = get32 s 0 in
-    let b = get32 s 0 in
-    let c = get32 s 0 in
-    let d = get32 s 0 in
+    let b = get32 s 4 in
+    let c = get32 s 8 in
+    let d = get32 s 12 in
     [|a;b;c;d|]
 
   let to_guid t =

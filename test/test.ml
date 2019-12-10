@@ -44,6 +44,15 @@ let partial_rt n =
     check string s s Bytes.(unsafe_to_string ~no_mutation_while_string_reachable:(sub s' ~pos:3 ~len:4))
   done
 
+let uuid_testable = testable Uuidm.pp Uuidm.equal
+
+let uuid n =
+  for _ = 0 to n - 1 do
+    let u = Uuidm.create `V4 in
+    let u' = KrakID.(to_guid (of_guid u)) in
+    check uuid_testable (Uuidm.to_string u) u u'
+  done
+
 let roundtrip ss =
   List.iter ss ~f:begin fun s ->
     let s' = KrakID.(to_string (of_string s)) in
@@ -52,6 +61,7 @@ let roundtrip ss =
 
 let krakid = [
   Alcotest.test_case "basic" `Quick (fun () -> ignore (partial_rt 10000)) ;
+  Alcotest.test_case "uuid" `Quick (fun () -> ignore (uuid 10000)) ;
   Alcotest.test_case "roundtrip" `Quick (fun () -> roundtrip ["BMBSASZ-E3ZQEE-JB3US4";
                                                               "L7V3M2-CH7MR-WMPRR7";
                                                               "L7V3M2-CH7MR-WMPRR7";
