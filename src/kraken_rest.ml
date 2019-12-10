@@ -59,45 +59,35 @@ let time =
 
 type 'a assoc = (string * 'a) list [@@deriving sexp]
 
-let balances_encoding =
-  conv
-    (fun s -> `O (List.map ~f:(fun (k, v) -> (k, `Float v)) s))
-    (function
-      | `O vs ->
-        List.map ~f:(function
-            | k, `String v -> k, float_of_string v
-            | _ -> invalid_arg "balance_encoding") vs
-      | #Ezjsonm.value -> invalid_arg "balance_encoding")
-    any_ezjson_value
-
-let list_encoding encoding =
-  conv
-    (fun s -> `O (List.map ~f:(fun (k, v) ->
-         (k, construct encoding v)) s))
+let list_encoding encoding idx_of_string =
+  conv (fun _ -> assert false)
     (function
       | `O vs ->
         List.map ~f:begin fun (k, v) ->
-          k, Ezjsonm_encoding.destruct_safe encoding v
+          Ezjsonm_encoding.destruct_safe (encoding (idx_of_string k)) v
         end vs
       | #Ezjsonm.value -> invalid_arg "list_encoding")
     any_ezjson_value
 
-let boxed_list_encoding name encoding =
-  conv (fun t -> t, 0l) (fun (t, _) -> t)
+let boxed_list_encoding name encoding idx_of_string =
+  conv
+    (fun t -> t, 0l)
+    (fun (t, _) -> t)
     (obj2
-       (req name (list_encoding encoding))
+       (req name (list_encoding encoding idx_of_string))
        (req "count" int32))
 
-let trade_encoding = boxed_list_encoding "trades" Filled_order.encoding
-let closed_encoding = boxed_list_encoding "closed" Order.encoding
-let ledger_encoding = boxed_list_encoding "ledger" Ledger.encoding
+let trade_encoding = boxed_list_encoding "trades" Filled_order.encoding KrakID.of_string
+let closed_encoding = boxed_list_encoding "closed" Order.encoding KrakID.of_string
+let ledger_encoding = boxed_list_encoding "ledger" Ledger.encoding KrakID.of_string
 
 let asset_pairs =
-  get (result_encoding (list_encoding Pair.encoding))
+  get (result_encoding (list_encoding Pair.encoding Fn.id))
     (Uri.with_path base_url "0/public/AssetPairs")
 
 let account_balance =
-  post_form ~auth (result_encoding balances_encoding)
+  let enc pair = conv (fun _ -> assert false) (fun a -> pair, a) strfloat in
+  post_form ~auth (result_encoding (list_encoding enc Fn.id))
     (Uri.with_path base_url "0/private/Balance")
 
 let trade_balance =

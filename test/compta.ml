@@ -45,25 +45,32 @@ let ordTypes_encoding =
     (Array.map ~f:ordType_of_string)
     (v sym)
 
+let krakids =
+  Kx.(conv  (Array.map ~f:KrakID.to_guid) (Array.map ~f:KrakID.of_guid) (v guid))
+
 let line =
   let open Kx in
-  t7 (v timestamp) (v sym) (list (s char)) sides_encoding ordTypes_encoding
-    (v float) (v float)
+  t7 (v timestamp) (v sym) krakids sides_encoding ordTypes_encoding (v float) (v float)
 
 let kx_of_fills fills =
-  let (times,syms,tids,sides,ordTypes,prices,qties) =
-    List.fold_right fills ~init:([],[],[],[],[],[],[])
-      ~f:begin fun (tid, fill) (times,syms,tids,sides,ordTypes,prices,qties) ->
-        (fill.Filled_order.time :: times,
-         fill.pair :: syms,
-         tid :: tids,
-         fill.side :: sides,
-         fill.ord_type :: ordTypes,
-         fill.price :: prices,
-         fill.vol :: qties)
-      end in
-  Kx_async.create line Array.(of_list times, of_list syms, of_list tids, of_list sides,
-                              of_list ordTypes, of_list prices, of_list qties)
+  let len = List.length fills in
+  let times = Array.create ~len Ptime.epoch in
+  let syms = Array.create ~len "" in
+  let tids = Array.create ~len KrakID.zero in
+  let sides = Array.create ~len Fixtypes.Side.Buy in
+  let ordTypes = Array.create ~len Fixtypes.OrdType.Market in
+  let pxs = Array.create ~len Float.nan in
+  let qties = Array.create ~len Float.nan in
+  List.iteri fills ~f:begin fun i ({ ordertxid; pair; time; side; ord_type; price; vol; _ }:Filled_order.t) ->
+    tids.(i) <- ordertxid ;
+    times.(i) <- time ;
+    syms.(i) <- pair ;
+    sides.(i) <- side ;
+    ordTypes.(i) <- ord_type ;
+    pxs.(i) <- price ;
+    qties.(i) <- vol ;
+  end ;
+  Kx_async.create line (times, syms, tids, sides, ordTypes, pxs, qties)
 
 let main () =
   Kx_async.Async.with_connection url ~f:begin fun { w; _ } ->
@@ -75,8 +82,8 @@ let main () =
       Pipe.write w (kx_of_fills fills) >>= fun () ->
       let len = List.length fills in
       Logs_async.app (fun m -> m "Found %d fills" len) >>= fun () ->
-      Deferred.List.iter fills ~f:begin fun (str, fill) ->
-        Log_async.app (fun m -> m "%s %a" str Filled_order.pp fill)
+      Deferred.List.iter fills ~f:begin fun fill ->
+        Log_async.app (fun m -> m "%a" Filled_order.pp fill)
       end >>= fun () ->
       if len < 50 then Deferred.Or_error.ok_unit
       else inner (n + len) in
@@ -89,6 +96,7 @@ let () =
     let open Command.Let_syntax in
     [%map_open
       let () = Logs_async_reporter.set_level_via_param [] in
+      (* and ledger = flag "ledger" no_arg ~doc:"Record ledger entries in DB" in *)
       fun () ->
         Logs.set_reporter (Logs_async_reporter.reporter ()) ;
         main ()

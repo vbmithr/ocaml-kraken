@@ -3,8 +3,8 @@ ordType:`limit`market
 
 trades:([]
  time:`timestamp$();
- sym:`$();
- tid:();
+ sym:`symbol$();
+ tid:`guid$();
  side:`side$();
  ordType:`ordType$();
  price:`float$();

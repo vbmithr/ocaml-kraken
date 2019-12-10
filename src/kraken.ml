@@ -14,9 +14,20 @@ module KrakID = struct
     | Trade
     | Ledger
 
-  type t = int Array.t
+  type t = int array
+  let zero = [|0;0;0;0|]
 
-  let guid t =
+  let get32 s p = Int32.to_int (EndianString.BigEndian.get_int32 s p)
+
+  let of_guid u =
+    let s = Uuidm.to_bytes u in
+    let a = get32 s 0 in
+    let b = get32 s 0 in
+    let c = get32 s 0 in
+    let d = get32 s 0 in
+    [|a;b;c;d|]
+
+  let to_guid t =
     let buf = Bytes.create 16 in
     Array.iteri (fun i v -> EndianBytes.BigEndian.set_int32 buf (i*4) (Int32.of_int v)) t ;
     let buf = Bytes.unsafe_to_string buf in
@@ -253,6 +264,7 @@ module Order = struct
          (opt "close" string))
 
   type t = {
+    id: KrakID.t ;
     status: OrdStatus.t ;
     opentm: Ptime.t option ;
     closetm: Ptime.t option ;
@@ -268,7 +280,7 @@ module Order = struct
     limitprice: float option ;
     misc: string ;
     oflags: string ;
-  } [@@deriving sexp]
+  } [@@deriving sexp_of]
 
   let pp ppf t =
     Format.fprintf ppf "%a" Sexplib.Sexp.pp (sexp_of_t t)
@@ -297,19 +309,13 @@ module Order = struct
       (opt "stopprice" strfloat)
       (opt "limitprice" strfloat)
 
-  let encoding =
+  let encoding id =
     conv
-      (fun { status ; opentm ; closetm ; starttm ; expiretm ;
-             descr ; vol ; vol_exec ; cost ; fee ; price ;
-             stopprice ; limitprice ; misc ; oflags
-           } ->
-        (((), (descr, status, misc, oflags)),
-         (opentm, closetm, starttm, expiretm)),
-        (vol, vol_exec, cost, fee, price, stopprice, limitprice))
+      (fun _ -> assert false)
       (fun ((((), (descr, status, misc, oflags)),
              (opentm, closetm, starttm, expiretm)),
             (vol, vol_exec, cost, fee, price, stopprice, limitprice)) ->
-        { status ; opentm ; closetm ; starttm ; expiretm ;
+        { id; status ; opentm ; closetm ; starttm ; expiretm ;
           descr ; vol ; vol_exec ; cost ; fee ; price ;
           stopprice ; limitprice ; misc ; oflags
         })
@@ -322,6 +328,7 @@ end
 
 module Filled_order = struct
   type t = {
+    id: KrakID.t ;
     ordertxid: KrakID.t ;
     postxid: KrakID.t option ;
     pair: string ;
@@ -339,13 +346,11 @@ module Filled_order = struct
   let pp ppf t =
     Format.fprintf ppf "%a" Sexplib.Sexp.pp (sexp_of_t t)
 
-  let encoding =
+  let encoding id =
     conv
-      (fun { ordertxid ; postxid ; pair ; time ; side ; ord_type ;
-             price ; cost ; fee ; vol ; margin ; misc } ->
-        (ordertxid, pair, time, side, ord_type, price, cost, fee, vol, margin), (misc, postxid))
+      (fun _ -> assert false)
       (fun ((ordertxid, pair, time, side, ord_type, price, cost, fee, vol, margin), (misc, postxid)) ->
-         { ordertxid ; postxid ; pair ; time ; side ; ord_type ;
+         { id; ordertxid ; postxid ; pair ; time ; side ; ord_type ;
            price ; cost ; fee ; vol ; margin ; misc })
       (merge_objs
          (obj10
@@ -371,6 +376,7 @@ let aclass =
 
 module Ledger = struct
   type t = {
+    id: KrakID.t ;
     refid : KrakID.t ;
     time : Ptime.t ;
     typ : [`deposit|`withdrawal|`trade|`margin|`transfer] ;
@@ -393,12 +399,10 @@ module Ledger = struct
       "transfer", `transfer ;
     ]
 
-  let encoding =
-    conv
-      (fun { refid ; time ; typ ; aclass ; asset ; amount ; fee ; balance } ->
-         (refid, time, typ, aclass, asset, amount, fee, balance))
+  let encoding id =
+    conv (fun _ -> assert false)
       (fun (refid, time, typ, aclass, asset, amount, fee, balance) ->
-         { refid ; time ; typ ; aclass ; asset ; amount ; fee ; balance })
+         { id; refid ; time ; typ ; aclass ; asset ; amount ; fee ; balance })
       (obj8
          (req "refid" KrakID.encoding)
          (req "time" Ptime.encoding)
@@ -412,6 +416,7 @@ end
 
 module Pair = struct
   type t = {
+    name: string ;
     altname: string ;
     wsname: string option ;
     aclass_base: aclass ;
@@ -424,12 +429,11 @@ module Pair = struct
   let pp ppf t =
     Format.fprintf ppf "%a" Sexplib.Sexp.pp (sexp_of_t t)
 
-  let encoding =
+  let encoding name =
     conv
-      (fun { altname ; wsname ; aclass_base ; base ; aclass_quote ; quote ; pair_decimals } ->
-         ((), (altname, wsname, aclass_base, base, aclass_quote, quote, pair_decimals)))
+      (fun _ -> assert false)
       (fun ((), (altname, wsname, aclass_base, base, aclass_quote, quote, pair_decimals)) ->
-         { altname ; wsname ; aclass_base ; base ; aclass_quote ; quote ; pair_decimals })
+         { name; altname ; wsname ; aclass_base ; base ; aclass_quote ; quote ; pair_decimals })
       (merge_objs unit
          (obj7
             (req "altname" string)

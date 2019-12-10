@@ -10,12 +10,14 @@ module KrakID : sig
 
   type t
 
+  val zero : t
   val kind : t -> kind
   val of_string : string -> t
   val to_string : t -> string
   val pp : t Fmt.t
   val encoding : t encoding
-  val guid : t -> Uuidm.t
+  val of_guid : Uuidm.t -> t
+  val to_guid : t -> Uuidm.t
 
   (**/**)
   val idx : char -> int
@@ -83,6 +85,7 @@ module Order : sig
   } [@@deriving sexp]
 
   type t = {
+    id: KrakID.t ;
     status: OrdStatus.t ;
     opentm: Ptime.t option ;
     closetm: Ptime.t option ;
@@ -98,14 +101,15 @@ module Order : sig
     limitprice: float option ;
     misc: string ;
     oflags: string ;
-  } [@@deriving sexp]
+  } [@@deriving sexp_of]
 
   val pp : Format.formatter -> t -> unit
-  val encoding : t encoding
+  val encoding : KrakID.t -> t encoding
 end
 
 module Filled_order : sig
   type t = {
+    id: KrakID.t ;
     ordertxid: KrakID.t ;
     postxid: KrakID.t option ;
     pair: string ;
@@ -121,7 +125,7 @@ module Filled_order : sig
   } [@@deriving sexp_of]
 
   val pp : Format.formatter -> t -> unit
-  val encoding : t encoding
+  val encoding : KrakID.t -> t encoding
 end
 
 type aclass = [`currency]
@@ -129,6 +133,7 @@ val aclass : aclass encoding
 
 module Ledger : sig
   type t = {
+    id: KrakID.t ;
     refid : KrakID.t ;
     time : Ptime.t ;
     typ : [`deposit|`withdrawal|`trade|`margin|`transfer] ;
@@ -140,11 +145,12 @@ module Ledger : sig
   } [@@deriving sexp_of]
 
   val pp : Format.formatter -> t -> unit
-  val encoding : t encoding
+  val encoding : KrakID.t -> t encoding
 end
 
 module Pair : sig
   type t = {
+    name: string ;
     altname: string ;
     wsname: string option ;
     aclass_base: aclass ;
@@ -155,5 +161,5 @@ module Pair : sig
   } [@@deriving sexp]
 
   val pp : Format.formatter -> t -> unit
-  val encoding : t encoding
+  val encoding : string -> t encoding
 end
