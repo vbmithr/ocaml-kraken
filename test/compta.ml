@@ -62,15 +62,16 @@ let kx_of_fills fills =
   let pxs = Array.create ~len Float.nan in
   let qties = Array.create ~len Float.nan in
   List.iteri fills ~f:begin fun i ({ ordertxid; pair; time; side; ord_type; price; vol; _ }:Filled_order.t) ->
-    tids.(i) <- ordertxid ;
     times.(i) <- time ;
     syms.(i) <- pair ;
+    tids.(i) <- ordertxid ;
     sides.(i) <- side ;
     ordTypes.(i) <- ord_type ;
     pxs.(i) <- price ;
     qties.(i) <- vol ;
   end ;
-  Kx_async.create line (times, syms, tids, sides, ordTypes, pxs, qties)
+  let open Kx in
+  Kx_async.create (t3 (a sym) (a sym) line) ("upd", "trades", (times, syms, tids, sides, ordTypes, pxs, qties))
 
 let main () =
   Kx_async.Async.with_connection url ~f:begin fun { w; _ } ->
