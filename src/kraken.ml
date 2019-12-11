@@ -389,6 +389,14 @@ module Ledger = struct
     | Margin -> "margin"
     | Transfer -> "transfer"
 
+  let typ_of_string = function
+    | "deposit" -> Deposit
+    | "withdrawal"-> Withdrawal
+    | "trade"-> Trade
+    | "margin"-> Margin
+    | "transfer"-> Transfer
+    | _ -> invalid_arg "Ledger.typ_of_string"
+
   let typ = string_enum [
       "deposit", Deposit ;
       "withdrawal", Withdrawal ;

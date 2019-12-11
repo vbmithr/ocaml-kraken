@@ -140,6 +140,7 @@ module Ledger : sig
     | Transfer [@@deriving sexp]
 
   val string_of_typ : typ -> string
+  val typ_of_string : string -> typ
 
   type t = {
     id: KrakID.t ;

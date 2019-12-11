@@ -48,7 +48,7 @@ let ordTypes_encoding =
 let krakids =
   Kx.(conv  (Array.map ~f:KrakID.to_guid) (Array.map ~f:KrakID.of_guid) (v guid))
 
-let line =
+let trades =
   let open Kx in
   t7 (v timestamp) (v sym) krakids sides_encoding ordTypes_encoding (v float) (v float)
 
@@ -71,7 +71,38 @@ let kx_of_fills fills =
     qties.(i) <- vol ;
   end ;
   let open Kx in
-  Kx_async.create (t3 (a sym) (a sym) line) ("upd", "trades", (times, syms, tids, sides, ordTypes, pxs, qties))
+  Kx_async.create (t3 (a sym) (a sym) trades) ("upd", "trades", (times, syms, tids, sides, ordTypes, pxs, qties))
+
+let ledgerTypes =
+  Kx.(conv
+        (fun v -> Array.map v ~f:Kraken.Ledger.string_of_typ)
+        (fun v -> Array.map v ~f:Kraken.Ledger.typ_of_string)
+        (v sym))
+
+let ledgersw =
+  let open Kx in
+  t7 (v timestamp) (v sym) ledgerTypes krakids krakids (v float) (v float)
+
+let kx_of_ledgers ledgers =
+  let len = List.length ledgers in
+  let times = Array.create ~len Ptime.epoch in
+  let syms = Array.create ~len "" in
+  let ids = Array.create ~len KrakID.zero in
+  let refids = Array.create ~len KrakID.zero in
+  let types = Array.create ~len Kraken.Ledger.Deposit in
+  let amounts = Array.create ~len Float.nan in
+  let fees = Array.create ~len Float.nan in
+  List.iteri ledgers ~f:begin fun i ({ asset; time; id; refid; amount; fee; _ }:Ledger.t) ->
+    times.(i) <- time ;
+    syms.(i) <- asset ;
+    ids.(i) <- id ;
+    refids.(i) <- refid ;
+    amounts.(i) <- amount ;
+    fees.(i) <- fee ;
+  end ;
+  let open Kx in
+  Kx_async.create (t3 (a sym) (a sym) ledgersw)
+    ("upd", "ledgers", (times, syms, types, ids, refids, amounts, fees))
 
 let auth = {
   Fastrest.key = cfg.key ;
@@ -92,10 +123,10 @@ let retrieveFills w =
     else inner (n + len) in
   inner 0
 
-let retrieveLedgers _w =
+let retrieveLedgers w =
   let rec inner n =
     Fastrest.request ~auth (Kraken_rest.ledgers ~ofs:n ()) >>=? fun ledgers ->
-    (* Pipe.write w (kx_of_fills fills) >>= fun () -> *)
+    Pipe.write w (kx_of_ledgers ledgers) >>= fun () ->
     let len = List.length ledgers in
     Logs_async.app (fun m -> m "Found %d ledger entries" len) >>= fun () ->
     Deferred.List.iter ledgers ~f:begin fun l ->

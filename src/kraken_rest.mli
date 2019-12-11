@@ -43,9 +43,9 @@ type deposit = {
   txid: string;
   info: string;
   amount: float;
-  fee: float;
+  fee: float option;
   time: Ptime.t;
-  status: [`Success|`Failure|`Partial];
+  status: [`Success|`Failure|`Partial|`Settled];
   status_prop: [`Return|`OnHold] option;
 }
 

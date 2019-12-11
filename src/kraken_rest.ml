@@ -176,9 +176,9 @@ type deposit = {
   txid: string;
   info: string;
   amount: float;
-  fee: float;
+  fee: float option;
   time: Ptime.t;
-  status: [`Success|`Failure|`Partial];
+  status: [`Success|`Failure|`Partial|`Settled];
   status_prop: [`Return|`OnHold] option;
 }
 
@@ -193,6 +193,7 @@ let status =
     "Success", `Success;
     "Failure", `Failure;
     "Partial", `Partial;
+    "Settled", `Settled;
   ]
 
 let deposit =
@@ -211,7 +212,7 @@ let deposit =
           (req "txid" string)
           (req "info" string)
           (req "amount" strfloat)
-          (req "fee" strfloat)
+          (opt "fee" strfloat)
           (req "time" Ptime.encoding)
           (req "status" status))
        (obj1 (opt "status-prop" status_prop)))
