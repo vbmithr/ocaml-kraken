@@ -37,12 +37,13 @@ let syms = Kx.(v sym)
 let sides = Kx.(conv (Array.map ~f:string_of_side) (Array.map ~f:side_of_string) (v sym))
 let ordTypes = Kx.(conv (Array.map ~f:string_of_ordType) (Array.map ~f:ordType_of_string) (v sym))
 let krakids = Kx.(conv  (Array.map ~f:KrakID.to_guid) (Array.map ~f:KrakID.of_guid) (v guid))
-let trades = Kx.(t8 (v timestamp) (v sym) krakids krakids sides ordTypes (v float) (v float))
+let trades = Kx.(t9 timestamps syms syms krakids krakids sides ordTypes (v float) (v float))
 
 let kx_of_fills fills =
   let len = List.length fills in
   let times = Array.create ~len Ptime.epoch in
   let syms = Array.create ~len "" in
+  let xchs = Array.create ~len "KRK" in
   let ids = Array.create ~len KrakID.zero in
   let oids = Array.create ~len KrakID.zero in
   let sides = Array.create ~len Fixtypes.Side.Buy in
@@ -60,28 +61,20 @@ let kx_of_fills fills =
     qties.(i) <- vol ;
   end ;
   let open Kx in
-  Kx_async.create (t3 (a sym) (a sym) trades) ("upd", "trades", (times, syms, ids, oids, sides, ordTypes, pxs, qties))
-
-let ledgerTypes =
-  Kx.(conv
-        (fun v -> Array.map v ~f:Kraken.Ledger.string_of_typ)
-        (fun v -> Array.map v ~f:Kraken.Ledger.typ_of_string)
-        (v sym))
-
-let ledgersw =
-  let open Kx in
-  t7 (v timestamp) (v sym) ledgerTypes krakids krakids (v float) (v float)
+  Kx_async.create (t3 (a sym) (a sym) trades)
+    ("upd", "trades", (times, syms, xchs, ids, oids, sides, ordTypes, pxs, qties))
 
 let ordersw =
   let open Kx in
   merge_tups
-    (t10 timestamps syms krakids sides ordTypes floats floats floats floats floats)
-    (t2 floats floats)
+    (t10 timestamps syms syms krakids sides ordTypes floats floats floats floats)
+    (t3 floats floats floats)
 
 let kx_of_orders orders =
   let len = List.length orders in
   let times = Array.create ~len Ptime.epoch in
   let syms = Array.create ~len "" in
+  let xchs = Array.create ~len "KRK" in
   let ids = Array.create ~len KrakID.zero in
   let sides = Array.create ~len Fixtypes.Side.Buy in
   let types = Array.create ~len Fixtypes.OrdType.Market in
@@ -110,12 +103,25 @@ let kx_of_orders orders =
   end ;
   let open Kx in
   Kx_async.create (t3 (a sym) (a sym) ordersw)
-    ("upd", "orders", ((times, syms, ids, sides, types, pxs, qties, execQties, costs, fees), (stopPxs, limitPxs)))
+    ("upd", "orders", ((times, syms, xchs, ids, sides,
+                        types, pxs, qties, execQties, costs),
+                       (fees, stopPxs, limitPxs)))
+
+let ledgerTypes =
+  Kx.(conv
+        (fun v -> Array.map v ~f:Kraken.Ledger.string_of_typ)
+        (fun v -> Array.map v ~f:Kraken.Ledger.typ_of_string)
+        (v sym))
+
+let ledgersw =
+  let open Kx in
+  t8 timestamps syms syms ledgerTypes krakids krakids floats floats
 
 let kx_of_ledgers ledgers =
   let len = List.length ledgers in
   let times = Array.create ~len Ptime.epoch in
   let syms = Array.create ~len "" in
+  let xchs = Array.create ~len "KRK" in
   let ids = Array.create ~len KrakID.zero in
   let refids = Array.create ~len KrakID.zero in
   let types = Array.create ~len Kraken.Ledger.Deposit in
@@ -132,7 +138,7 @@ let kx_of_ledgers ledgers =
   end ;
   let open Kx in
   Kx_async.create (t3 (a sym) (a sym) ledgersw)
-    ("upd", "ledgers", (times, syms, types, ids, refids, amounts, fees))
+    ("upd", "ledgers", (times, syms, xchs, types, ids, refids, amounts, fees))
 
 let auth = {
   Fastrest.key = cfg.key ;

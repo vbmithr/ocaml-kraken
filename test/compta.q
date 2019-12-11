@@ -1,10 +1,12 @@
 side:`buy`sell
 ordType:`limit`market
 ledgerType:`deposit`withdrawal`trade`transfer
+exchange:`KRK`GIO
 
 orders:([]
  time:`timestamp$();
  sym:`symbol$();
+ exchange:`exchange$();
  id:`guid$();
  side:`side$();
  ordType:`ordType$();
@@ -19,6 +21,7 @@ orders:([]
 trades:([]
  time:`timestamp$();
  sym:`symbol$();
+ exchange:`exchange$();
  id:`guid$();
  oid:`guid$();
  side:`side$();
@@ -29,6 +32,7 @@ trades:([]
 ledgers:([]
  time:`timestamp$();
  sym:`symbol$();
+ exchange:`exchange$();
  typ:`ledgerType$();
  id:`guid$();
  refid:`guid$();
