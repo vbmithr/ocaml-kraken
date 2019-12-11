@@ -31,47 +31,36 @@ let string_of_side = function Fixtypes.Side.Buy -> "buy" | Sell -> "sell"
 let ordType_of_string = function "limit" -> Fixtypes.OrdType.Limit | _ -> Market
 let string_of_ordType = function Fixtypes.OrdType.Limit -> "limit" | _ -> "market"
 
-let sides_encoding =
-  let open Kx in
-  conv
-    (Array.map ~f:string_of_side)
-    (Array.map ~f:side_of_string)
-    (v sym)
-
-let ordTypes_encoding =
-  let open Kx in
-  conv
-    (Array.map ~f:string_of_ordType)
-    (Array.map ~f:ordType_of_string)
-    (v sym)
-
-let krakids =
-  Kx.(conv  (Array.map ~f:KrakID.to_guid) (Array.map ~f:KrakID.of_guid) (v guid))
-
-let trades =
-  let open Kx in
-  t7 (v timestamp) (v sym) krakids sides_encoding ordTypes_encoding (v float) (v float)
+let floats = Kx.(v float)
+let timestamps = Kx.(v timestamp)
+let syms = Kx.(v sym)
+let sides = Kx.(conv (Array.map ~f:string_of_side) (Array.map ~f:side_of_string) (v sym))
+let ordTypes = Kx.(conv (Array.map ~f:string_of_ordType) (Array.map ~f:ordType_of_string) (v sym))
+let krakids = Kx.(conv  (Array.map ~f:KrakID.to_guid) (Array.map ~f:KrakID.of_guid) (v guid))
+let trades = Kx.(t8 (v timestamp) (v sym) krakids krakids sides ordTypes (v float) (v float))
 
 let kx_of_fills fills =
   let len = List.length fills in
   let times = Array.create ~len Ptime.epoch in
   let syms = Array.create ~len "" in
-  let tids = Array.create ~len KrakID.zero in
+  let ids = Array.create ~len KrakID.zero in
+  let oids = Array.create ~len KrakID.zero in
   let sides = Array.create ~len Fixtypes.Side.Buy in
   let ordTypes = Array.create ~len Fixtypes.OrdType.Market in
   let pxs = Array.create ~len Float.nan in
   let qties = Array.create ~len Float.nan in
-  List.iteri fills ~f:begin fun i ({ ordertxid; pair; time; side; ord_type; price; vol; _ }:Filled_order.t) ->
+  List.iteri fills ~f:begin fun i ({ Trade.id; ordertxid; pair; time; side; ord_type; price; vol; _ }) ->
     times.(i) <- time ;
     syms.(i) <- pair ;
-    tids.(i) <- ordertxid ;
+    ids.(i) <- id ;
+    oids.(i) <- ordertxid ;
     sides.(i) <- side ;
     ordTypes.(i) <- ord_type ;
     pxs.(i) <- price ;
     qties.(i) <- vol ;
   end ;
   let open Kx in
-  Kx_async.create (t3 (a sym) (a sym) trades) ("upd", "trades", (times, syms, tids, sides, ordTypes, pxs, qties))
+  Kx_async.create (t3 (a sym) (a sym) trades) ("upd", "trades", (times, syms, ids, oids, sides, ordTypes, pxs, qties))
 
 let ledgerTypes =
   Kx.(conv
@@ -83,6 +72,46 @@ let ledgersw =
   let open Kx in
   t7 (v timestamp) (v sym) ledgerTypes krakids krakids (v float) (v float)
 
+let ordersw =
+  let open Kx in
+  merge_tups
+    (t10 timestamps syms krakids sides ordTypes floats floats floats floats floats)
+    (t2 floats floats)
+
+let kx_of_orders orders =
+  let len = List.length orders in
+  let times = Array.create ~len Ptime.epoch in
+  let syms = Array.create ~len "" in
+  let ids = Array.create ~len KrakID.zero in
+  let sides = Array.create ~len Fixtypes.Side.Buy in
+  let types = Array.create ~len Fixtypes.OrdType.Market in
+  let qties = Array.create ~len Float.nan in
+  let execQties = Array.create ~len Float.nan in
+  let costs = Array.create ~len Float.nan in
+  let fees = Array.create ~len Float.nan in
+  let pxs = Array.create ~len Float.nan in
+  let stopPxs = Array.create ~len Float.nan in
+  let limitPxs = Array.create ~len Float.nan in
+  List.iteri orders ~f:begin fun i ({ id; opentm; descr; vol; vol_exec;
+                                      cost; fee; price; stopprice; limitprice; _ }:Order.t) ->
+    times.(i) <- opentm ;
+    syms.(i) <- descr.pair ;
+    ids.(i) <- id ;
+    sides.(i) <- descr.side ;
+    types.(i) <- descr.ord_type ;
+    qties.(i) <- vol ;
+    execQties.(i) <- vol_exec ;
+    costs.(i) <- cost ;
+    costs.(i) <- cost ;
+    fees.(i) <- fee ;
+    pxs.(i) <- price ;
+    stopPxs.(i) <- if stopprice = 0. then Kx.nf else stopprice ;
+    limitPxs.(i) <- if limitprice = 0. then Kx.nf else limitprice ;
+  end ;
+  let open Kx in
+  Kx_async.create (t3 (a sym) (a sym) ordersw)
+    ("upd", "orders", ((times, syms, ids, sides, types, pxs, qties, execQties, costs, fees), (stopPxs, limitPxs)))
+
 let kx_of_ledgers ledgers =
   let len = List.length ledgers in
   let times = Array.create ~len Ptime.epoch in
@@ -92,10 +121,11 @@ let kx_of_ledgers ledgers =
   let types = Array.create ~len Kraken.Ledger.Deposit in
   let amounts = Array.create ~len Float.nan in
   let fees = Array.create ~len Float.nan in
-  List.iteri ledgers ~f:begin fun i ({ asset; time; id; refid; amount; fee; _ }:Ledger.t) ->
+  List.iteri ledgers ~f:begin fun i ({ asset; time; typ; id; refid; amount; fee; _ }:Ledger.t) ->
     times.(i) <- time ;
     syms.(i) <- asset ;
     ids.(i) <- id ;
+    types.(i) <- typ ;
     refids.(i) <- refid ;
     amounts.(i) <- amount ;
     fees.(i) <- fee ;
@@ -110,6 +140,19 @@ let auth = {
   meta = []
 }
 
+let retrieveOrders w =
+  let rec inner n =
+    Fastrest.request ~auth (Kraken_rest.closed_orders ~ofs:n ()) >>=? fun os ->
+    Pipe.write w (kx_of_orders os) >>= fun () ->
+    let len = List.length os in
+    Logs_async.app (fun m -> m "Found %d closed orders" len) >>= fun () ->
+    Deferred.List.iter os ~f:begin fun os ->
+      Log_async.app (fun m -> m "%a" Order.pp os)
+    end >>= fun () ->
+    if len < 50 then Deferred.Or_error.ok_unit
+    else inner (n + len) in
+  inner 0
+
 let retrieveFills w =
   let rec inner n =
     Fastrest.request ~auth (Kraken_rest.trade_history n) >>=? fun fills ->
@@ -117,7 +160,7 @@ let retrieveFills w =
     let len = List.length fills in
     Logs_async.app (fun m -> m "Found %d fills" len) >>= fun () ->
     Deferred.List.iter fills ~f:begin fun fill ->
-      Log_async.app (fun m -> m "%a" Filled_order.pp fill)
+      Log_async.app (fun m -> m "%a" Trade.pp fill)
     end >>= fun () ->
     if len < 50 then Deferred.Or_error.ok_unit
     else inner (n + len) in
@@ -138,6 +181,7 @@ let retrieveLedgers w =
 
 let main () =
   Kx_async.Async.with_connection url ~f:begin fun { w; _ } ->
+    retrieveOrders w >>=? fun () ->
     retrieveFills w >>=? fun () ->
     retrieveLedgers w
   end >>= fun _ ->

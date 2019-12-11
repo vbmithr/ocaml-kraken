@@ -266,18 +266,18 @@ module Order = struct
   type t = {
     id: KrakID.t ;
     status: OrdStatus.t ;
-    opentm: Ptime.t option ;
-    closetm: Ptime.t option ;
-    starttm: Ptime.t option ;
-    expiretm: Ptime.t option ;
+    opentm: Ptime.t ;
+    closetm: Ptime.t ;
+    starttm: Ptime.t ;
+    expiretm: Ptime.t ;
     descr: descr;
     vol: float ;
     vol_exec: float ;
     cost: float ;
     fee: float ;
     price: float ;
-    stopprice: float option ;
-    limitprice: float option ;
+    stopprice: float ;
+    limitprice: float ;
     misc: string ;
     oflags: string ;
   } [@@deriving sexp_of]
@@ -294,10 +294,10 @@ module Order = struct
 
   let times_encoding =
     obj4
-      (opt "opentm" Ptime.encoding)
-      (opt "closetm" Ptime.encoding)
-      (opt "starttm" Ptime.encoding)
-      (opt "expiretm" Ptime.encoding)
+      (req "opentm" Ptime.encoding)
+      (req "closetm" Ptime.encoding)
+      (req "starttm" Ptime.encoding)
+      (req "expiretm" Ptime.encoding)
 
   let floats_encoding =
     obj7
@@ -306,8 +306,8 @@ module Order = struct
       (req "cost" strfloat)
       (req "fee" strfloat)
       (req "price" strfloat)
-      (opt "stopprice" strfloat)
-      (opt "limitprice" strfloat)
+      (req "stopprice" strfloat)
+      (req "limitprice" strfloat)
 
   let encoding id =
     conv
@@ -326,7 +326,7 @@ module Order = struct
          floats_encoding)
 end
 
-module Filled_order = struct
+module Trade = struct
   type t = {
     id: KrakID.t ;
     ordertxid: KrakID.t ;

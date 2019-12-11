@@ -77,7 +77,7 @@ let boxed_list_encoding name encoding idx_of_string =
        (req name (list_encoding encoding idx_of_string))
        (req "count" int32))
 
-let trade_encoding = boxed_list_encoding "trades" Filled_order.encoding KrakID.of_string
+let trade_encoding = boxed_list_encoding "trades" Trade.encoding KrakID.of_string
 let closed_encoding = boxed_list_encoding "closed" Order.encoding KrakID.of_string
 let ledger_encoding = boxed_list_encoding "ledger" Ledger.encoding KrakID.of_string
 
@@ -94,8 +94,16 @@ let trade_balance =
   post_form ~auth (result_encoding Balance.encoding)
     (Uri.with_path base_url "0/private/TradeBalance")
 
-let closed_orders ofs =
-  post_form ~auth ~params:["ofs", [Int.to_string ofs]]
+let string_of_ptime t =
+  Float.to_string (Ptime.to_float_s t)
+
+let closed_orders ?start ?stop ?ofs () =
+  let params = List.filter_opt [
+      Option.map start ~f:(fun t -> "start", [string_of_ptime t]) ;
+      Option.map stop ~f:(fun t -> "end", [string_of_ptime t]) ;
+      Option.map ofs ~f:(fun ofs -> "ofs", [Int.to_string ofs]) ;
+    ] in
+  post_form ~auth ~params
     (result_encoding closed_encoding)
     (Uri.with_path base_url "0/private/ClosedOrders")
 
@@ -108,8 +116,8 @@ let ledgers ?assets ?typ ?start ?stop ?ofs () =
   let params = List.filter_opt [
       Option.map assets ~f:(fun assets -> "assets", assets) ;
       Option.map typ ~f:(fun typ -> "type", [Ledger.string_of_typ typ]) ;
-      Option.map start ~f:(fun t -> "start", [Float.to_string (Ptime.to_float_s t)]) ;
-      Option.map stop ~f:(fun t -> "end", [Float.to_string (Ptime.to_float_s t)]) ;
+      Option.map start ~f:(fun t -> "start", [string_of_ptime t]) ;
+      Option.map stop ~f:(fun t -> "end", [string_of_ptime t]) ;
       Option.map ofs ~f:(fun ofs -> "ofs", [Int.to_string ofs]) ;
   ] in
   post_form ~params ~auth (result_encoding ledger_encoding)

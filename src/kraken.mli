@@ -87,18 +87,18 @@ module Order : sig
   type t = {
     id: KrakID.t ;
     status: OrdStatus.t ;
-    opentm: Ptime.t option ;
-    closetm: Ptime.t option ;
-    starttm: Ptime.t option ;
-    expiretm: Ptime.t option ;
+    opentm: Ptime.t ;
+    closetm: Ptime.t ;
+    starttm: Ptime.t ;
+    expiretm: Ptime.t ;
     descr: descr;
     vol: float ;
     vol_exec: float ;
     cost: float ;
     fee: float ;
     price: float ;
-    stopprice: float option ;
-    limitprice: float option ;
+    stopprice: float ;
+    limitprice: float ;
     misc: string ;
     oflags: string ;
   } [@@deriving sexp_of]
@@ -107,7 +107,7 @@ module Order : sig
   val encoding : KrakID.t -> t encoding
 end
 
-module Filled_order : sig
+module Trade : sig
   type t = {
     id: KrakID.t ;
     ordertxid: KrakID.t ;
