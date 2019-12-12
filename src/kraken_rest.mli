@@ -4,7 +4,8 @@ open Json_encoding
 
 val time : (form, Ptime.t) service
 
-val asset_pairs : (form, Pair.t list) service
+val assets : (form, Asset.t list) service
+val symbols : (form, Pair.t list) service
 val account_balance : (form, (string * float) list) service
 val trade_balance : (form, Balance.t) service
 
@@ -39,19 +40,37 @@ type addr = {
 
 val deposit_addresses : asset:string -> meth:string -> (form, addr list) service
 
-type deposit = {
-  meth: string;
-  aclass: aclass;
-  asset: string;
-  refid: string;
-  txid: string;
-  info: string;
-  amount: float;
-  fee: float option;
-  time: Ptime.t;
-  status: [`Success|`Failure|`Partial|`Settled];
-  status_prop: [`Return|`OnHold] option;
-}
+module Transfer : sig
+  type status =
+    | Success
+    | Pending
+    | Partial
+    | Settled
+    | Fail
 
-val deposit_status : asset:string -> meth:string -> (form, deposit list) service
-val withdraw_status : asset:string -> meth:string -> (form, string list) service
+  val string_of_status : status -> string
+
+  type status_prop =
+    | Return
+    | OnHold
+
+  type t = {
+    meth: string;
+    aclass: aclass;
+    asset: string;
+    refid: KrakID.t;
+    txid: string;
+    info: string;
+    amount: float;
+    fee: float;
+    time: Ptime.t;
+    status: status ;
+    status_prop: status_prop option;
+  } [@@deriving sexp_of]
+
+  val pp : t Fmt.t
+end
+
+val transfer_status :
+  asset:string -> meth:string ->
+  [`Deposit|`Withdrawal] -> (form, Transfer.t list) service

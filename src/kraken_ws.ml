@@ -39,7 +39,7 @@ type subscription =
   | Book of int
   | Spread
   | All
-[@@deriving sexp]
+[@@deriving sexp_of]
 
 let subscription_encoding =
   let open Json_encoding in
@@ -72,7 +72,7 @@ type subscriptionStatus =
   | Subscribed
   | Unsubscribed
   | Error of string
-[@@deriving sexp]
+[@@deriving sexp_of]
 
 let subscriptionStatus_encoding =
   let open Json_encoding in
@@ -86,7 +86,7 @@ type status = {
   connectionID: float ;
   status: string ;
   version: string
-} [@@deriving sexp]
+} [@@deriving sexp_of]
 
 let status_encoding =
   let open Json_encoding in
@@ -103,7 +103,7 @@ type subscribe = {
   reqid: int option ;
   pairs: Pair.t list ;
   sub: subscription ;
-} [@@deriving sexp]
+} [@@deriving sexp_of]
 
 let tickers ?reqid pairs = { reqid ; pairs ; sub = Ticker }
 let trades ?reqid pairs = { reqid ; pairs ; sub = Trade }
@@ -134,7 +134,7 @@ type subscription_status = {
   status : subscriptionStatus ;
   reqid : int option ;
   subscription : subscription ;
-} [@@deriving sexp]
+} [@@deriving sexp_of]
 
 let subscription_status_encoding =
   let open Json_encoding in
@@ -155,7 +155,7 @@ let subscription_status_encoding =
 type error = {
   reqid : int option ;
   msg : string
-} [@@deriving sexp]
+} [@@deriving sexp_of]
 
 let error_encoding =
   let open Json_encoding in
@@ -172,7 +172,7 @@ let error_encoding =
 type unsubscribe = {
   chanid : int ;
   reqid : int option
-} [@@deriving sexp]
+} [@@deriving sexp_of]
 
 let unsubscribe_encoding =
   let open Json_encoding in
@@ -188,7 +188,7 @@ type a = {
   price: float ;
   wholeLotVolume : int ;
   lotVolume : float
-} [@@deriving sexp]
+} [@@deriving sexp_of]
 
 let a_encoding =
   let open Json_encoding in
@@ -201,7 +201,7 @@ type b = {
   price: float ;
   wholeLotVolume : int ;
   lotVolume : float
-} [@@deriving sexp]
+} [@@deriving sexp_of]
 
 let b_encoding =
   let open Json_encoding in
@@ -213,7 +213,7 @@ let b_encoding =
 type c = {
   price: float ;
   lotVolume : float
-} [@@deriving sexp]
+} [@@deriving sexp_of]
 
 let c_encoding =
   let open Json_encoding in
@@ -225,7 +225,7 @@ let c_encoding =
 type v = {
   today: float ;
   last24Hours: float
-} [@@deriving sexp]
+} [@@deriving sexp_of]
 
 let v_encoding =
   let open Json_encoding in
@@ -237,7 +237,7 @@ let v_encoding =
 type p = {
   today: float ;
   last24Hours: float
-} [@@deriving sexp]
+} [@@deriving sexp_of]
 
 let p_encoding =
   let open Json_encoding in
@@ -249,7 +249,7 @@ let p_encoding =
 type ti = {
   today: int ;
   last24Hours: int
-} [@@deriving sexp]
+} [@@deriving sexp_of]
 
 let ti_encoding =
   let open Json_encoding in
@@ -261,7 +261,7 @@ let ti_encoding =
 type l = {
   today: float ;
   last24Hours: float
-} [@@deriving sexp]
+} [@@deriving sexp_of]
 
 let l_encoding =
   let open Json_encoding in
@@ -273,7 +273,7 @@ let l_encoding =
 type h = {
   today: float ;
   last24Hours: float
-} [@@deriving sexp]
+} [@@deriving sexp_of]
 
 let h_encoding =
   let open Json_encoding in
@@ -285,7 +285,7 @@ let h_encoding =
 type o = {
   today: float ;
   last24Hours: float
-} [@@deriving sexp]
+} [@@deriving sexp_of]
 
 let o_encoding =
   let open Json_encoding in
@@ -304,7 +304,7 @@ type ticker = {
   l: l;
   h: h;
   o: o;
-} [@@deriving sexp]
+} [@@deriving sexp_of]
 
 let ticker_encoding =
   let open Json_encoding in
@@ -331,7 +331,7 @@ type trade = {
   side: Fixtypes.Side.t ;
   ord_type: Fixtypes.OrdType.t ;
   misc: string ;
-} [@@deriving sexp]
+} [@@deriving sexp_of]
 
 let side_encoding =
   let open Json_encoding in
@@ -362,7 +362,7 @@ type quote = {
   qty: float ;
   ts: Ptime.t ;
   republish: bool ;
-} [@@deriving sexp]
+} [@@deriving sexp_of]
 
 let book_entry_encoding =
   let open Json_encoding in
@@ -379,7 +379,7 @@ let book_entry_encoding =
 type book = {
   asks : quote list ;
   bids : quote list ;
-} [@@deriving sexp]
+} [@@deriving sexp_of]
 
 let snap_encoding =
   let open Json_encoding in
@@ -419,7 +419,7 @@ and 'a update = {
   pair: Pair.t ;
   data: 'a ;
 }
-[@@deriving sexp]
+[@@deriving sexp_of]
 
 let full_book_update_encoding =
   let open Json_encoding in

@@ -55,59 +55,59 @@ type subscription_status = {
   status : subscriptionStatus ;
   reqid : int option ;
   subscription : subscription ;
-} [@@deriving sexp]
+} [@@deriving sexp_of]
 
 type error = {
   reqid : int option ;
   msg : string
-} [@@deriving sexp]
+} [@@deriving sexp_of]
 
 type a = {
   price: float ;
   wholeLotVolume : int ;
   lotVolume : float
-} [@@deriving sexp]
+} [@@deriving sexp_of]
 
 type b = {
   price: float ;
   wholeLotVolume : int ;
   lotVolume : float
-} [@@deriving sexp]
+} [@@deriving sexp_of]
 
 type c = {
   price: float ;
   lotVolume : float
-} [@@deriving sexp]
+} [@@deriving sexp_of]
 
 type v = {
   today: float ;
   last24Hours: float
-} [@@deriving sexp]
+} [@@deriving sexp_of]
 
 type p = {
   today: float ;
   last24Hours: float
-} [@@deriving sexp]
+} [@@deriving sexp_of]
 
 type ti = {
   today: int;
   last24Hours: int
-} [@@deriving sexp]
+} [@@deriving sexp_of]
 
 type l = {
   today: float ;
   last24Hours: float
-} [@@deriving sexp]
+} [@@deriving sexp_of]
 
 type h = {
   today: float ;
   last24Hours: float
-} [@@deriving sexp]
+} [@@deriving sexp_of]
 
 type o = {
   today: float ;
   last24Hours: float
-} [@@deriving sexp]
+} [@@deriving sexp_of]
 
 type ticker = {
   a: a ;
@@ -119,7 +119,7 @@ type ticker = {
   l: l ;
   h: h ;
   o: o ;
-} [@@deriving sexp]
+} [@@deriving sexp_of]
 
 type trade = {
   price: float ;
@@ -128,24 +128,24 @@ type trade = {
   side: Fixtypes.Side.t ;
   ord_type: Fixtypes.OrdType.t ;
   misc: string ;
-} [@@deriving sexp]
+} [@@deriving sexp_of]
 
 type quote = {
   price: float ;
   qty: float ;
   ts: Ptime.t ;
   republish: bool ;
-} [@@deriving sexp]
+} [@@deriving sexp_of]
 
 type book = {
   asks : quote list ;
   bids : quote list ;
-} [@@deriving sexp]
+} [@@deriving sexp_of]
 
 type unsubscribe = {
   chanid : int ;
   reqid : int option
-} [@@deriving sexp]
+} [@@deriving sexp_of]
 
 type t =
   | Ping of int option
@@ -167,8 +167,7 @@ and 'a update = {
   pair: Pair.t ;
   data: 'a ;
 }
-[@@deriving sexp]
-
+[@@deriving sexp_of]
 
 val pp : Format.formatter -> t -> unit
 val encoding : t Json_encoding.encoding

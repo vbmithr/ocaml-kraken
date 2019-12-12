@@ -70,7 +70,8 @@ let krakid = [
 
 let rest = [
   wrap_request "time" time ;
-  wrap_request "AssetPairs" asset_pairs ;
+  wrap_request "assets" assets ;
+  wrap_request "symbols" symbols ;
   wrap_request "account_balance" account_balance ;
   wrap_request "trade_balance" trade_balance ;
   wrap_request "closed_orders" (closed_orders ~ofs:0 ()) ;
@@ -80,9 +81,10 @@ let rest = [
   wrap_request "DepositMethodsBTC"  (deposit_methods ~asset:"XBT") ;
   wrap_request "DepositMethodsXTZ"  (deposit_methods ~asset:"XTZ") ;
   wrap_request "DepositAddresses"  (deposit_addresses ~asset:"XBT" ~meth:"Bitcoin") ;
-  wrap_request "DepositStatusXBT"  (deposit_status ~asset:"XBT" ~meth:"Bitcoin") ;
-  wrap_request "DepositStatusXTZ"  (deposit_status ~asset:"XTZ" ~meth:"XTZ") ;
-  (* wrap_request "WithdrawStatus"  (withdraw_status ~asset:"XBT" ~meth:"Bitcoin") ; *)
+  wrap_request "DepositStatusXBT"  (transfer_status ~asset:"XBT" ~meth:"Bitcoin" `Deposit) ;
+  wrap_request "DepositStatusXTZ"  (transfer_status ~asset:"XTZ" ~meth:"XTZ" `Deposit) ;
+  wrap_request "WithdrawStatus"  (transfer_status ~asset:"XBT" ~meth:"Bitcoin" `Withdrawal) ;
+  wrap_request "WithdrawStatus"  (transfer_status ~asset:"XTZ" ~meth:"XTZ" `Withdrawal) ;
 ]
 
 let () =

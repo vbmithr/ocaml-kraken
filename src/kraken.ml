@@ -140,16 +140,9 @@ end
 module Ptime = struct
   include Ptime
 
-  type date_ = int * int * int [@@deriving sexp]
+  type date_ = int * int * int [@@deriving sexp_of]
 
-  let date_of_sexp = date__of_sexp
   let sexp_of_date = sexp_of_date_
-
-  let t_of_sexp sexp =
-    let sexp_str = string_of_sexp sexp in
-    match of_rfc3339 sexp_str with
-    | Ok (t, _, _) -> t
-    | _ -> invalid_arg "Ptime.t_of_sexp"
 
   let sexp_of_t t =
     sexp_of_string (to_rfc3339 t)
@@ -164,7 +157,7 @@ module Ptime = struct
 end
 
 module OrdType = struct
-  type t = Fixtypes.OrdType.t [@@deriving sexp]
+  type t = Fixtypes.OrdType.t [@@deriving sexp_of]
 
   let encoding =
     string_enum [
@@ -177,7 +170,7 @@ module OrdType = struct
 end
 
 module OrdStatus = struct
-  type t = Fixtypes.OrdStatus.t [@@deriving sexp]
+  type t = Fixtypes.OrdStatus.t [@@deriving sexp_of]
 
   let encoding =
     string_enum [
@@ -199,7 +192,7 @@ module Balance = struct
     positions_value : float ;
     equity : float ;
     free_margin : float ;
-  } [@@deriving sexp]
+  } [@@deriving sexp_of]
 
   let pp ppf t =
     Format.fprintf ppf "%a" Sexplib.Sexp.pp (sexp_of_t t)
@@ -241,7 +234,7 @@ module Order = struct
     leverage: string ;
     order: string ;
     close: string option ;
-  } [@@deriving sexp]
+  } [@@deriving sexp_of]
 
   let descr_encoding =
     conv
@@ -369,7 +362,7 @@ module Trade = struct
             (opt "postxid" KrakID.encoding)))
 end
 
-type aclass = [`currency] [@@deriving sexp]
+type aclass = [`currency] [@@deriving sexp_of]
 
 let aclass =
   string_enum ["currency", `currency]
@@ -380,7 +373,7 @@ module Ledger = struct
     | Withdrawal
     | Trade
     | Margin
-    | Transfer [@@deriving sexp]
+    | Transfer [@@deriving sexp_of]
 
   let string_of_typ = function
     | Deposit -> "deposit"
@@ -435,6 +428,27 @@ module Ledger = struct
          (req "balance" strfloat))
 end
 
+module Asset = struct
+  type t = {
+    name: string ;
+    altname: string ;
+    aclass: aclass ;
+    decimals: int ;
+    display_decimals: int ;
+  }
+
+  let encoding name =
+    conv
+      (fun _ -> assert false)
+      (fun (altname, aclass, decimals, display_decimals) ->
+         { name; altname ; aclass ; decimals ; display_decimals })
+      (obj4
+         (req "altname" string)
+         (req "aclass" aclass)
+         (req "decimals" int)
+         (req "display_decimals" int))
+end
+
 module Pair = struct
   type t = {
     name: string ;
@@ -445,7 +459,7 @@ module Pair = struct
     aclass_quote: aclass ;
     quote: string ;
     pair_decimals: int ;
-  } [@@deriving sexp]
+  } [@@deriving sexp_of]
 
   let pp ppf t =
     Format.fprintf ppf "%a" Sexplib.Sexp.pp (sexp_of_t t)

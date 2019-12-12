@@ -56,9 +56,6 @@ let time =
   get (result_encoding time_encoding)
     (Uri.with_path base_url "0/public/Time")
 
-
-type 'a assoc = (string * 'a) list [@@deriving sexp]
-
 let list_encoding encoding idx_of_string =
   conv (fun _ -> assert false)
     (function
@@ -81,7 +78,11 @@ let trade_encoding = boxed_list_encoding "trades" Trade.encoding KrakID.of_strin
 let closed_encoding = boxed_list_encoding "closed" Order.encoding KrakID.of_string
 let ledger_encoding = boxed_list_encoding "ledger" Ledger.encoding KrakID.of_string
 
-let asset_pairs =
+let assets =
+  get (result_encoding (list_encoding Asset.encoding Fn.id))
+    (Uri.with_path base_url "0/public/Assets")
+
+let symbols =
   get (result_encoding (list_encoding Pair.encoding Fn.id))
     (Uri.with_path base_url "0/public/AssetPairs")
 
@@ -176,61 +177,85 @@ let deposit_addresses ~asset ~meth =
     (result_encoding (list addr))
     (Uri.with_path base_url "0/private/DepositAddresses")
 
-type deposit = {
-  meth: string;
-  aclass: aclass;
-  asset: string;
-  refid: string;
-  txid: string;
-  info: string;
-  amount: float;
-  fee: float option;
-  time: Ptime.t;
-  status: [`Success|`Failure|`Partial|`Settled];
-  status_prop: [`Return|`OnHold] option;
-}
+module Transfer = struct
+  type status =
+    | Success
+    | Pending
+    | Partial
+    | Settled
+    | Fail
+  [@@deriving sexp_of]
 
-let status_prop =
-  string_enum [
-    "return", `Return;
-    "onhold", `OnHold;
-  ]
+  let string_of_status = function
+    | Success -> "Success"
+    | Pending -> "Pending"
+    | Partial -> "Partial"
+    | Settled -> "Settled"
+    | Fail -> "Failure"
 
-let status =
-  string_enum [
-    "Success", `Success;
-    "Failure", `Failure;
-    "Partial", `Partial;
-    "Settled", `Settled;
-  ]
+  type status_prop =
+    | Return
+    | OnHold
+  [@@deriving sexp_of]
 
-let deposit =
-  conv
-    (fun _ -> assert false)
-    (fun ((meth, aclass, asset, refid, txid,
-           info, amount, fee, time, status), status_prop) ->
-      { meth; aclass; asset; refid; txid; info;
-        amount; fee; time; status; status_prop })
-    (merge_objs
-       (obj10
-          (req "method" string)
-          (req "aclass" aclass)
-          (req "asset" string)
-          (req "refid" string)
-          (req "txid" string)
-          (req "info" string)
-          (req "amount" strfloat)
-          (opt "fee" strfloat)
-          (req "time" Ptime.encoding)
-          (req "status" status))
-       (obj1 (opt "status-prop" status_prop)))
+  type t = {
+    meth: string;
+    aclass: aclass;
+    asset: string;
+    refid: KrakID.t;
+    txid: string;
+    info: string;
+    amount: float;
+    fee: float;
+    time: Ptime.t;
+    status: status;
+    status_prop: status_prop option;
+  } [@@deriving sexp_of]
 
-let deposit_status ~asset ~meth =
+  let pp ppf t =
+    Format.fprintf ppf "%a" Sexplib.Sexp.pp (sexp_of_t t)
+
+  let status_prop =
+    string_enum [
+      "return", Return;
+      "onhold", OnHold;
+    ]
+
+  let status =
+    string_enum [
+      "Success", Success;
+      "Failure", Fail;
+      "Partial", Partial;
+      "Settled", Settled;
+      "Pending", Pending;
+    ]
+
+  let encoding =
+    conv
+      (fun _ -> assert false)
+      (fun ((meth, aclass, asset, refid, txid,
+             info, amount, fee, time, status), status_prop) ->
+        { meth; aclass; asset; refid; txid; info;
+          amount; fee; time; status; status_prop })
+      (merge_objs
+         (obj10
+            (req "method" string)
+            (req "aclass" aclass)
+            (req "asset" string)
+            (req "refid" KrakID.encoding)
+            (req "txid" string)
+            (req "info" string)
+            (req "amount" strfloat)
+            (req "fee" strfloat)
+            (req "time" Ptime.encoding)
+            (req "status" status))
+         (obj1 (opt "status-prop" status_prop)))
+end
+
+let transfer_status ~asset ~meth kind =
+  let path = match kind with
+    | `Deposit -> "0/private/DepositStatus"
+    | `Withdrawal -> "0/private/WithdrawStatus" in
   post_form ~auth ~params:["asset", [asset]; "method", [meth]]
-    (result_encoding (list deposit))
-    (Uri.with_path base_url "0/private/DepositStatus")
-
-let withdraw_status ~asset ~meth =
-  post_form ~auth ~params:["asset", [asset]; "method", [meth]]
-    (result_encoding (list string))
-    (Uri.with_path base_url "0/private/WithdrawStatus")
+    (result_encoding (list Transfer.encoding))
+    (Uri.with_path base_url path)

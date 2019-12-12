@@ -140,6 +140,42 @@ let kx_of_ledgers ledgers =
   Kx_async.create (t3 (a sym) (a sym) ledgersw)
     ("upd", "ledgers", (times, syms, xchs, types, ids, refids, amounts, fees))
 
+let statuses =
+  Kx.(conv
+        (fun s -> Array.map s ~f:Kraken_rest.Transfer.string_of_status)
+        (fun _ -> assert false) (v sym))
+
+let transfersw =
+  let open Kx in
+  t10 timestamps syms syms ledgerTypes statuses krakids (list (s char)) (list (s char)) floats floats
+
+let kx_of_transfers transfers kind =
+  let len = List.length transfers in
+  let times = Array.create ~len Ptime.epoch in
+  let syms = Array.create ~len "" in
+  let xchs = Array.create ~len "KRK" in
+  let refids = Array.create ~len KrakID.zero in
+  let txids = Array.create ~len "" in
+  let addrs = Array.create ~len "" in
+  let types = Array.create ~len Kraken.Ledger.Deposit in
+  let statuses = Array.create ~len Kraken_rest.Transfer.Fail in
+  let amounts = Array.create ~len Float.nan in
+  let fees = Array.create ~len Float.nan in
+  List.iteri transfers ~f:begin fun i ({ asset; time; refid; txid; info; amount; fee; status; _ }:Kraken_rest.Transfer.t) ->
+    refids.(i) <- refid ;
+    times.(i) <- time ;
+    syms.(i) <- asset ;
+    txids.(i) <- txid ;
+    types.(i) <- kind ;
+    addrs.(i) <- info ;
+    statuses.(i) <- status ;
+    amounts.(i) <- amount ;
+    fees.(i) <- fee ;
+  end ;
+  let open Kx in
+  Kx_async.create (t3 (a sym) (a sym) transfersw)
+    ("upd", "transfers", (times, syms, xchs, types, statuses, refids, txids, addrs, amounts, fees))
+
 let auth = {
   Fastrest.key = cfg.key ;
   secret = Base64.decode_exn cfg.secret ;
@@ -185,8 +221,23 @@ let retrieveLedgers w =
     else inner (n + len) in
   inner 0
 
+let retrieveTransfers w asset meth =
+  Fastrest.request ~auth (Kraken_rest.transfer_status ~asset ~meth `Deposit) >>=? fun deposits ->
+  Fastrest.request ~auth (Kraken_rest.transfer_status ~asset ~meth `Withdrawal) >>=? fun withdrawals ->
+  Pipe.write w (kx_of_transfers deposits Deposit) >>= fun () ->
+  Pipe.write w (kx_of_transfers withdrawals Withdrawal) >>= fun () ->
+  let nbDeposits = List.length deposits in
+  let nbWithdrawals = List.length withdrawals in
+  Logs_async.app (fun m -> m "Found %d/%d %s deposits" nbDeposits nbWithdrawals asset) >>= fun () ->
+  Deferred.List.iter deposits ~f:begin fun d ->
+    Log_async.app (fun m -> m "%a" Kraken_rest.Transfer.pp d)
+  end >>= fun () ->
+  Deferred.Or_error.return ()
+
 let main () =
   Kx_async.Async.with_connection url ~f:begin fun { w; _ } ->
+    retrieveTransfers w "XTZ" "XTZ" >>=? fun () ->
+    retrieveTransfers w "BTC" "Bitcoin" >>=? fun () ->
     retrieveOrders w >>=? fun () ->
     retrieveFills w >>=? fun () ->
     retrieveLedgers w

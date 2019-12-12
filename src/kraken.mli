@@ -8,7 +8,7 @@ module KrakID : sig
     | Trade
     | Ledger
 
-  type t
+  type t [@@deriving sexp_of]
 
   val zero : t
   val kind : t -> kind
@@ -39,15 +39,13 @@ module Ptime : sig
      and type span = Ptime.span
      and type date = Ptime.date
 
-  val t_of_sexp : Sexplib.Sexp.t -> Ptime.t
   val sexp_of_t : Ptime.t -> Sexplib.Sexp.t
-  val date_of_sexp : Sexplib.Sexp.t -> date
   val sexp_of_date : date -> Sexplib.Sexp.t
   val encoding : t encoding
 end
 
 module OrdType : sig
-  type t = Fixtypes.OrdType.t [@@deriving sexp]
+  type t = Fixtypes.OrdType.t [@@deriving sexp_of]
   val encoding : t encoding
 end
 
@@ -66,7 +64,7 @@ module Balance : sig
     positions_value : float ;
     equity : float ;
     free_margin : float ;
-  } [@@deriving sexp]
+  } [@@deriving sexp_of]
 
   val pp : Format.formatter -> t -> unit
   val encoding : t encoding
@@ -82,7 +80,7 @@ module Order : sig
     leverage: string ;
     order: string ;
     close: string option ;
-  } [@@deriving sexp]
+  } [@@deriving sexp_of]
 
   type t = {
     id: KrakID.t ;
@@ -128,7 +126,7 @@ module Trade : sig
   val encoding : KrakID.t -> t encoding
 end
 
-type aclass = [`currency]
+type aclass = [`currency] [@@deriving sexp_of]
 val aclass : aclass encoding
 
 module Ledger : sig
@@ -137,7 +135,7 @@ module Ledger : sig
     | Withdrawal
     | Trade
     | Margin
-    | Transfer [@@deriving sexp]
+    | Transfer [@@deriving sexp_of]
 
   val string_of_typ : typ -> string
   val typ_of_string : string -> typ
@@ -158,6 +156,17 @@ module Ledger : sig
   val encoding : KrakID.t -> t encoding
 end
 
+module Asset : sig
+  type t = {
+    name: string ;
+    altname: string ;
+    aclass: aclass ;
+    decimals: int ;
+    display_decimals: int ;
+  }
+  val encoding : string -> t encoding
+end
+
 module Pair : sig
   type t = {
     name: string ;
@@ -168,7 +177,7 @@ module Pair : sig
     aclass_quote: aclass ;
     quote: string ;
     pair_decimals: int ;
-  } [@@deriving sexp]
+  } [@@deriving sexp_of]
 
   val pp : Format.formatter -> t -> unit
   val encoding : string -> t encoding
