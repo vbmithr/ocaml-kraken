@@ -109,8 +109,8 @@ let kx_of_orders orders =
 
 let ledgerTypes =
   Kx.(conv
-        (fun v -> Array.map v ~f:Kraken.Ledger.string_of_typ)
-        (fun v -> Array.map v ~f:Kraken.Ledger.typ_of_string)
+        (fun v -> Array.map v ~f:(Fn.compose String.uncapitalize Kraken.Ledger.string_of_typ))
+        (fun v -> Array.map v ~f:(Fn.compose Kraken.Ledger.typ_of_string String.capitalize))
         (v sym))
 
 let ledgersw =
@@ -235,7 +235,7 @@ let retrieveTransfers w asset meth =
   Deferred.Or_error.return ()
 
 let main () =
-  Kx_async.Async.with_connection url ~f:begin fun { w; _ } ->
+  Kx_async.with_connection url ~f:begin fun { w; _ } ->
     retrieveTransfers w "XTZ" "XTZ" >>=? fun () ->
     retrieveTransfers w "BTC" "Bitcoin" >>=? fun () ->
     retrieveOrders w >>=? fun () ->
