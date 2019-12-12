@@ -73,7 +73,8 @@ let rest = [
   wrap_request "assets" assets ;
   wrap_request "symbols" symbols ;
   wrap_request "account_balance" account_balance ;
-  wrap_request "trade_balance" trade_balance ;
+  wrap_request "trade_balance" (trade_balance ()) ;
+  wrap_request "trade_balanceXBT" (trade_balance ~asset:"XBT" ()) ;
   wrap_request "closed_orders" (closed_orders ~ofs:0 ()) ;
   wrap_request "trade_history" (trade_history 0) ;
   wrap_request "ledgers" (ledgers ()) ;

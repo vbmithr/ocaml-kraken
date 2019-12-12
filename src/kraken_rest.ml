@@ -91,8 +91,9 @@ let account_balance =
   post_form ~auth (result_encoding (list_encoding enc Fn.id))
     (Uri.with_path base_url "0/private/Balance")
 
-let trade_balance =
-  post_form ~auth (result_encoding Balance.encoding)
+let trade_balance ?(asset="ZUSD") () =
+  let params = ["asset", [asset]] in
+  post_form ~params ~auth (result_encoding Balance.encoding)
     (Uri.with_path base_url "0/private/TradeBalance")
 
 let string_of_ptime t =

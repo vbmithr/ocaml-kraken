@@ -7,7 +7,7 @@ val time : (form, Ptime.t) service
 val assets : (form, Asset.t list) service
 val symbols : (form, Pair.t list) service
 val account_balance : (form, (string * float) list) service
-val trade_balance : (form, Balance.t) service
+val trade_balance : ?asset:string -> unit -> (form, Balance.t) service
 
 val closed_orders :
   ?start:Ptime.t -> ?stop:Ptime.t -> ?ofs:int -> unit ->
