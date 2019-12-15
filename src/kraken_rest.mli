@@ -74,3 +74,10 @@ end
 val transfer_status :
   asset:string -> meth:string ->
   [`Deposit|`Withdrawal] -> (form, Transfer.t list) service
+
+type token = {
+  token: string ;
+  expires: Ptime.Span.t ;
+}
+
+val websocket_token : (form, token) service

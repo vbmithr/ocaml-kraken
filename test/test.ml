@@ -86,6 +86,7 @@ let rest = [
   wrap_request "DepositStatusXTZ"  (transfer_status ~asset:"XTZ" ~meth:"XTZ" `Deposit) ;
   wrap_request "WithdrawStatus"  (transfer_status ~asset:"XBT" ~meth:"Bitcoin" `Withdrawal) ;
   wrap_request "WithdrawStatus"  (transfer_status ~asset:"XTZ" ~meth:"XTZ" `Withdrawal) ;
+  wrap_request "WebsocketToken" websocket_token ;
 ]
 
 let () =

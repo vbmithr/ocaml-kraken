@@ -56,39 +56,30 @@ let time =
   get (result_encoding time_encoding)
     (Uri.with_path base_url "0/public/Time")
 
-let list_encoding encoding idx_of_string =
-  conv (fun _ -> assert false)
-    (function
-      | `O vs ->
-        List.map ~f:begin fun (k, v) ->
-          Ezjsonm_encoding.destruct_safe (encoding (idx_of_string k)) v
-        end vs
-      | #Ezjsonm.value -> invalid_arg "list_encoding")
-    any_ezjson_value
 
-let boxed_list_encoding name encoding idx_of_string =
+let boxed_list name encoding idx_of_string =
   conv
     (fun t -> t, 0l)
     (fun (t, _) -> t)
     (obj2
-       (req name (list_encoding encoding idx_of_string))
+       (req name (kraklist encoding idx_of_string))
        (req "count" int32))
 
-let trade_encoding = boxed_list_encoding "trades" Trade.encoding KrakID.of_string
-let closed_encoding = boxed_list_encoding "closed" Order.encoding KrakID.of_string
-let ledger_encoding = boxed_list_encoding "ledger" Ledger.encoding KrakID.of_string
+let trades = boxed_list "trades" Trade.encoding KrakID.of_string
+let closed = boxed_list "closed" Order.encoding KrakID.of_string
+let ledger = boxed_list "ledger" Ledger.encoding KrakID.of_string
 
 let assets =
-  get (result_encoding (list_encoding Asset.encoding Fn.id))
+  get (result_encoding (kraklist Asset.encoding Fn.id))
     (Uri.with_path base_url "0/public/Assets")
 
 let symbols =
-  get (result_encoding (list_encoding Pair.encoding Fn.id))
+  get (result_encoding (kraklist Pair.encoding Fn.id))
     (Uri.with_path base_url "0/public/AssetPairs")
 
 let account_balance =
   let enc pair = conv (fun _ -> assert false) (fun a -> pair, a) strfloat in
-  post_form ~auth (result_encoding (list_encoding enc Fn.id))
+  post_form ~auth (result_encoding (kraklist enc Fn.id))
     (Uri.with_path base_url "0/private/Balance")
 
 let trade_balance ?(asset="ZUSD") () =
@@ -106,12 +97,12 @@ let closed_orders ?start ?stop ?ofs () =
       Option.map ofs ~f:(fun ofs -> "ofs", [Int.to_string ofs]) ;
     ] in
   post_form ~auth ~params
-    (result_encoding closed_encoding)
+    (result_encoding closed)
     (Uri.with_path base_url "0/private/ClosedOrders")
 
 let trade_history ofs =
   post_form ~auth ~params:["ofs", [Int.to_string ofs]]
-    (result_encoding trade_encoding)
+    (result_encoding trades)
     (Uri.with_path base_url "0/private/TradesHistory")
 
 let ledgers ?assets ?typ ?start ?stop ?ofs () =
@@ -122,7 +113,7 @@ let ledgers ?assets ?typ ?start ?stop ?ofs () =
       Option.map stop ~f:(fun t -> "end", [string_of_ptime t]) ;
       Option.map ofs ~f:(fun ofs -> "ofs", [Int.to_string ofs]) ;
   ] in
-  post_form ~params ~auth (result_encoding ledger_encoding)
+  post_form ~params ~auth (result_encoding ledger)
     (Uri.with_path base_url "0/private/Ledgers")
 
 type deposit_method = {
@@ -260,3 +251,22 @@ let transfer_status ~asset ~meth kind =
   post_form ~auth ~params:["asset", [asset]; "method", [meth]]
     (result_encoding (list Transfer.encoding))
     (Uri.with_path base_url path)
+
+type token = {
+  token: string ;
+  expires: Ptime.Span.t ;
+}
+
+let span = conv (fun _ -> assert false) Ptime.Span.of_int_s int
+
+let token =
+  conv (fun _ -> assert false)
+    (fun (token, expires) -> { token; expires })
+    (obj2
+       (req "token" string)
+       (req "expires" span))
+
+let websocket_token =
+  post_form ~auth
+    (result_encoding token)
+    (Uri.with_path base_url "0/private/GetWebSocketsToken")

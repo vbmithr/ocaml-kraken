@@ -15,5 +15,5 @@ val with_connection :
   (t Pipe.Reader.t -> t Pipe.Writer.t -> 'a Deferred.t) ->
   'a Deferred.Or_error.t
 
-val with_connection_exn : ?beta:bool ->
-  (t Pipe.Reader.t -> t Pipe.Writer.t -> 'a Deferred.t) -> 'a Deferred.t
+(* val with_connection_exn : ?beta:bool ->
+ *   (t Pipe.Reader.t -> t Pipe.Writer.t -> 'a Deferred.t) -> 'a Deferred.t *)

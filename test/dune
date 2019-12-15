@@ -27,6 +27,8 @@
  (package kraken-ws-async)
  (preprocess (pps ppx_jane ppx_sexp_conv))
  (libraries
+   fastrest
+   kraken-rest
    logs-async-reporter
    kraken-ws
    kraken-ws-async))

@@ -4,7 +4,7 @@ open Async
 open Kraken
 open Kraken_ws
 
-let url = Uri.make ~scheme:"https" ~host:"ws.kraken.com" ()
+let url = Uri.make ~scheme:"https" ~host:"ws-auth.kraken.com" ()
 let beta_url = Uri.make ~scheme:"https" ~host:"ws-beta.kraken.com" ()
 
 let src = Logs.Src.create "kraken.ws.async"
@@ -58,7 +58,7 @@ let with_connection ?(beta=false) f =
       ~finally:(fun () -> Pipe.close_read ws_read ; Deferred.unit)
   end
 
-let with_connection_exn ?beta f =
-  with_connection ?beta f >>= function
-  | Error e -> Error.raise e
-  | Ok a -> return a
+(* let with_connection_exn ?beta f =
+ *   with_connection ?beta f >>= function
+ *   | Error e -> Error.raise e
+ *   | Ok a -> return a *)

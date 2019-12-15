@@ -1,3 +1,5 @@
+open Kraken
+
 module Pair : sig
   type t = {
     base: string ;
@@ -21,7 +23,8 @@ type subscription = private
   | Spread
   | All
 
-val subscription_encoding : subscription Json_encoding.encoding
+  | OwnTrades of string
+  | OpenOrders of string
 
 type status = {
   connectionID: float ;
@@ -35,29 +38,16 @@ type subscribe = {
   sub: subscription ;
 }
 
-val tickers : ?reqid:int -> Pair.t list -> subscribe
-val trades : ?reqid:int -> Pair.t list -> subscribe
-val book10 : ?reqid:int -> Pair.t list -> subscribe
-val book25 : ?reqid:int -> Pair.t list -> subscribe
-val book100 : ?reqid:int -> Pair.t list -> subscribe
-val book500 : ?reqid:int -> Pair.t list -> subscribe
-val book1000 : ?reqid:int -> Pair.t list -> subscribe
-
-type subscriptionStatus =
-  | Subscribed
-  | Unsubscribed
-  | Error of string
-
 type subscription_status = {
-  chanid : int ;
+  chanid : int option ;
   name : string ;
-  pair : Pair.t ;
-  status : subscriptionStatus ;
+  pair : Pair.t option ;
+  status : [`Subscribed|`Unsubscribed] ;
   reqid : int option ;
   subscription : subscription ;
 } [@@deriving sexp_of]
 
-type error = {
+type subscription_error = {
   reqid : int option ;
   msg : string
 } [@@deriving sexp_of]
@@ -154,12 +144,15 @@ type t =
   | Status of status
   | Subscribe of subscribe
   | Unsubscribe of unsubscribe
-  | Error of error
+  | SubscriptionError of subscription_error
   | SubscriptionStatus of subscription_status
   | Ticker of ticker update
   | Trade of trade list update
   | Snapshot of book update
   | Quotes of book update
+
+  | OwnTrades of Trade.t list
+  | OpenOrders of Order.t list
 
 and 'a update = {
   chanid: int ;
@@ -168,6 +161,16 @@ and 'a update = {
   data: 'a ;
 }
 [@@deriving sexp_of]
+
+val ownTrades : ?reqid:int -> string -> t
+val openOrders : ?reqid:int -> string -> t
+val tickers : ?reqid:int -> Pair.t list -> t
+val trades : ?reqid:int -> Pair.t list -> t
+val book10 : ?reqid:int -> Pair.t list -> t
+val book25 : ?reqid:int -> Pair.t list -> t
+val book100 : ?reqid:int -> Pair.t list -> t
+val book500 : ?reqid:int -> Pair.t list -> t
+val book1000 : ?reqid:int -> Pair.t list -> t
 
 val pp : Format.formatter -> t -> unit
 val encoding : t Json_encoding.encoding

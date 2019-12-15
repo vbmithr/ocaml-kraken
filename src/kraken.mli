@@ -27,6 +27,7 @@ module KrakID : sig
 end
 
 val strfloat : float encoding
+val kraklist : ('a -> 'b encoding) -> (string -> 'a) -> 'b list encoding
 
 module Ezjsonm_encoding : sig
   include module type of Json_encoding.Make(Json_repr.Ezjsonm)
@@ -119,7 +120,7 @@ module Trade : sig
     fee: float ;
     vol: float ;
     margin: float ;
-    misc: string ;
+    misc: string option ;
   } [@@deriving sexp_of]
 
   val pp : Format.formatter -> t -> unit

@@ -333,7 +333,7 @@ module Trade = struct
     fee: float ;
     vol: float ;
     margin: float ;
-    misc: string ;
+    misc: string option ;
   } [@@deriving sexp_of]
 
   let pp ppf t =
@@ -343,7 +343,7 @@ module Trade = struct
     conv
       (fun _ -> assert false)
       (fun ((ordertxid, pair, time, side, ord_type, price, cost, fee, vol, margin), (misc, postxid)) ->
-         { id; ordertxid ; postxid ; pair ; time ; side ; ord_type ;
+         { id; ordertxid ; postxid = Option.join postxid; pair ; time ; side ; ord_type ;
            price ; cost ; fee ; vol ; margin ; misc })
       (merge_objs
          (obj10
@@ -358,8 +358,8 @@ module Trade = struct
             (req "vol" strfloat)
             (req "margin" strfloat))
          (obj2
-            (req "misc" string)
-            (opt "postxid" KrakID.encoding)))
+            (opt "misc" string)
+            (opt "postxid" (option KrakID.encoding))))
 end
 
 type aclass = [`currency] [@@deriving sexp_of]
@@ -479,3 +479,13 @@ module Pair = struct
             (req "quote" string)
             (req "pair_decimals" int)))
 end
+
+let kraklist encoding idx_of_string =
+  conv (fun _ -> assert false)
+    (function
+      | `O vs ->
+        List.map begin fun (k, v) ->
+          Ezjsonm_encoding.destruct_safe (encoding (idx_of_string k)) v
+        end vs
+      | #Ezjsonm.value -> invalid_arg "list_encoding")
+    any_ezjson_value
