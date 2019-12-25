@@ -1,5 +1,24 @@
 open Json_encoding
 
+module Pair : sig
+  type t = {
+    base: string ;
+    quote: string ;
+  }  [@@deriving sexp]
+
+  val compare : t -> t -> int
+
+  val pp : Format.formatter -> t -> unit
+  val to_string : t -> string
+  val of_string : string -> t option
+  val of_string_exn : string -> t
+  val encoding : t Json_encoding.encoding
+
+  module Set : Set.S with type elt := t
+  module Map : Map.S with type key := t
+  module Table : Hashtbl.S with type key := t
+end
+
 module KrakID : sig
   type kind =
     | Order
@@ -155,31 +174,4 @@ module Ledger : sig
 
   val pp : Format.formatter -> t -> unit
   val encoding : KrakID.t -> t encoding
-end
-
-module Asset : sig
-  type t = {
-    name: string ;
-    altname: string ;
-    aclass: aclass ;
-    decimals: int ;
-    display_decimals: int ;
-  }
-  val encoding : string -> t encoding
-end
-
-module Pair : sig
-  type t = {
-    name: string ;
-    altname: string ;
-    wsname: string option ;
-    aclass_base: aclass ;
-    base: string ;
-    aclass_quote: aclass ;
-    quote: string ;
-    pair_decimals: int ;
-  } [@@deriving sexp_of]
-
-  val pp : Format.formatter -> t -> unit
-  val encoding : string -> t encoding
 end

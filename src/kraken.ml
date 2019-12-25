@@ -1,6 +1,45 @@
 open Sexplib.Std
 open Json_encoding
 
+module Pair = struct
+  module T = struct
+    type t = {
+      base: string ;
+      quote: string ;
+    } [@@deriving sexp]
+
+    let compare { base ; quote } { base = base' ; quote = quote' } =
+      match String.compare base base' with
+      | 0 -> String.compare quote quote'
+      | n -> n
+
+    let equal a b = compare a b = 0
+    let hash = Hashtbl.hash
+  end
+  include T
+  module Set = Set.Make(T)
+  module Map = Map.Make(T)
+  module Table = Hashtbl.Make(T)
+
+  let pp ppf { base ; quote } =
+    Format.fprintf ppf "%s/%s" base quote
+
+  let to_string { base ; quote } =
+    base ^ "/" ^ quote
+
+  let of_string s =
+    match String.split_on_char '/' s with
+    | [base ; quote] -> Some { base ; quote }
+    | _ -> None
+
+  let of_string_exn s =
+    match String.split_on_char '/' s with
+    | [base ; quote] -> { base ; quote }
+    | _ -> invalid_arg "pair_of_string_exn"
+
+  let encoding = conv to_string of_string_exn string
+end
+
 module KrakID = struct
   let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
@@ -426,58 +465,6 @@ module Ledger = struct
          (req "amount" strfloat)
          (req "fee" strfloat)
          (req "balance" strfloat))
-end
-
-module Asset = struct
-  type t = {
-    name: string ;
-    altname: string ;
-    aclass: aclass ;
-    decimals: int ;
-    display_decimals: int ;
-  }
-
-  let encoding name =
-    conv
-      (fun _ -> assert false)
-      (fun (altname, aclass, decimals, display_decimals) ->
-         { name; altname ; aclass ; decimals ; display_decimals })
-      (obj4
-         (req "altname" string)
-         (req "aclass" aclass)
-         (req "decimals" int)
-         (req "display_decimals" int))
-end
-
-module Pair = struct
-  type t = {
-    name: string ;
-    altname: string ;
-    wsname: string option ;
-    aclass_base: aclass ;
-    base: string ;
-    aclass_quote: aclass ;
-    quote: string ;
-    pair_decimals: int ;
-  } [@@deriving sexp_of]
-
-  let pp ppf t =
-    Format.fprintf ppf "%a" Sexplib.Sexp.pp (sexp_of_t t)
-
-  let encoding name =
-    conv
-      (fun _ -> assert false)
-      (fun ((), (altname, wsname, aclass_base, base, aclass_quote, quote, pair_decimals)) ->
-         { name; altname ; wsname ; aclass_base ; base ; aclass_quote ; quote ; pair_decimals })
-      (merge_objs unit
-         (obj7
-            (req "altname" string)
-            (opt "wsname" string)
-            (req "aclass_base" aclass)
-            (req "base" string)
-            (req "aclass_quote" aclass)
-            (req "quote" string)
-            (req "pair_decimals" int)))
 end
 
 let kraklist encoding idx_of_string =

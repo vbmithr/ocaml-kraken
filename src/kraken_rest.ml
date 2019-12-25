@@ -3,6 +3,58 @@ open Kraken
 open Fastrest
 open Json_encoding
 
+module Asset = struct
+  type t = {
+    name: string ;
+    altname: string ;
+    aclass: aclass ;
+    decimals: int ;
+    display_decimals: int ;
+  }
+
+  let encoding name =
+    conv
+      (fun _ -> assert false)
+      (fun (altname, aclass, decimals, display_decimals) ->
+         { name; altname ; aclass ; decimals ; display_decimals })
+      (obj4
+         (req "altname" string)
+         (req "aclass" aclass)
+         (req "decimals" int)
+         (req "display_decimals" int))
+end
+
+module AssetPair = struct
+  type t = {
+    name: string ;
+    altname: string ;
+    wsname: Pair.t option ;
+    aclass_base: aclass ;
+    base: string ;
+    aclass_quote: aclass ;
+    quote: string ;
+    pair_decimals: int ;
+  } [@@deriving sexp_of]
+
+  let pp ppf t =
+    Format.fprintf ppf "%a" Sexplib.Sexp.pp (sexp_of_t t)
+
+  let encoding name =
+    conv
+      (fun _ -> assert false)
+      (fun ((), (altname, wsname, aclass_base, base, aclass_quote, quote, pair_decimals)) ->
+         { name; altname ; wsname ; aclass_base ; base ; aclass_quote ; quote ; pair_decimals })
+      (merge_objs unit
+         (obj7
+            (req "altname" string)
+            (opt "wsname" Pair.encoding)
+            (req "aclass_base" aclass)
+            (req "base" string)
+            (req "aclass_quote" aclass)
+            (req "quote" string)
+            (req "pair_decimals" int)))
+end
+
 let base_url =
   Uri.make ~scheme:"https" ~host:"api.kraken.com" ()
 
@@ -74,7 +126,7 @@ let assets =
     (Uri.with_path base_url "0/public/Assets")
 
 let symbols =
-  get (result_encoding (kraklist Pair.encoding Fn.id))
+  get (result_encoding (kraklist AssetPair.encoding Fn.id))
     (Uri.with_path base_url "0/public/AssetPairs")
 
 let account_balance =

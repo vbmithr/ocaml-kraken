@@ -2,10 +2,36 @@ open Kraken
 open Fastrest
 open Json_encoding
 
-val time : (form, Ptime.t) service
+module Asset : sig
+  type t = {
+    name: string ;
+    altname: string ;
+    aclass: aclass ;
+    decimals: int ;
+    display_decimals: int ;
+  }
+  val encoding : string -> t encoding
+end
 
+module AssetPair : sig
+  type t = {
+    name: string ;
+    altname: string ;
+    wsname: Pair.t option ;
+    aclass_base: aclass ;
+    base: string ;
+    aclass_quote: aclass ;
+    quote: string ;
+    pair_decimals: int ;
+  } [@@deriving sexp_of]
+
+  val pp : Format.formatter -> t -> unit
+  val encoding : string -> t encoding
+end
+
+val time : (form, Ptime.t) service
 val assets : (form, Asset.t list) service
-val symbols : (form, Pair.t list) service
+val symbols : (form, AssetPair.t list) service
 val account_balance : (form, (string * float) list) service
 val trade_balance : ?asset:string -> unit -> (form, Balance.t) service
 
