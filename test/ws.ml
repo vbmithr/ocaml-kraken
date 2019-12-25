@@ -1,6 +1,6 @@
 open Core
 open Async
-
+open Kraken
 open Kraken_ws
 
 let src = Logs.Src.create "kraken.ws-test" ~doc:"Kraken API - WS test application"
@@ -56,7 +56,7 @@ let auth = Fastrest.auth ~key:cfg.key ~secret:(Base64.decode_exn cfg.secret) ()
 
 let main () =
   Fastrest.request ~auth Kraken_rest.websocket_token >>=? fun { token; _ } ->
-  Kraken_ws_async.with_connection begin fun r w ->
+  Kraken_ws_async.with_connection url_public ~f:begin fun r w ->
     let log_incoming msg =
       Logs_async.debug ~src (fun m -> m "%a" pp msg) in
     Pipe.write w (ownTrades token) >>= fun () ->

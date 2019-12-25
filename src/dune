@@ -40,4 +40,4 @@
  (public_name kraken-ws-async)
  (modules kraken_ws_async)
  (preprocess (pps ppx_sexp_conv))
- (libraries ezjsonm kraken_ws core async fastws-async))
+ (libraries uri-sexp ezjsonm kraken_ws core async fastws-async))

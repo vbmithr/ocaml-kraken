@@ -1,19 +1,13 @@
 open Kraken
 
-module Pair : sig
-  type t = {
-    base: string ;
-    quote: string ;
-  }  [@@deriving sexp]
+val url_public : Uri.t
+(** For public channels only. *)
 
-  val compare : t -> t -> int
+val url_auth : Uri.t
+(** For public and private channels, auth is required in all cases. *)
 
-  val pp : Format.formatter -> t -> unit
-  val to_string : t -> string
-  val of_string : string -> t option
-  val of_string_exn : string -> t
-  val encoding : t Json_encoding.encoding
-end
+val url_beta : Uri.t
+(** Beta endpoint, do not use in prod. *)
 
 type subscription = private
   | Ticker
