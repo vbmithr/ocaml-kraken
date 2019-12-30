@@ -17,18 +17,19 @@
    logs-async-reporter
    kraken-rest
    kx-async
-   kraken-ws
-   kraken-ws-async))
+   kraken-ws))
 
 (executable
  (name ws)
  (modules ws)
  (public_name kraken-ws-cli)
- (package kraken-ws-async)
+ (package kraken-ws)
  (preprocess (pps ppx_jane ppx_sexp_conv))
  (libraries
+   core
+   async
+   fastws-async
    fastrest
    kraken-rest
    logs-async-reporter
-   kraken-ws
-   kraken-ws-async))
+   kraken-ws))

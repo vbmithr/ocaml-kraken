@@ -55,8 +55,8 @@ let cfg =
 let auth = Fastrest.auth ~key:cfg.key ~secret:(Base64.decode_exn cfg.secret) ()
 
 let main () =
-  Fastrest.request ~auth Kraken_rest.websocket_token >>=? fun { token; _ } ->
-  Kraken_ws_async.with_connection url_public ~f:begin fun r w ->
+  Fastrest.request ~auth Kraken_rest.websocket_token >>|? fun { token; _ } ->
+  Fastws_async.with_connection ~of_string ~to_string url_public begin fun _ r w ->
     let log_incoming msg =
       Logs_async.debug ~src (fun m -> m "%a" pp msg) in
     Pipe.write w (ownTrades token) >>= fun () ->

@@ -34,10 +34,3 @@
  (modules kraken_ws)
  (preprocess (pps ppx_sexp_conv))
  (libraries fixtypes kraken ptime uri ocplib-json-typed))
-
-(library
- (name        kraken_ws_async)
- (public_name kraken-ws-async)
- (modules kraken_ws_async)
- (preprocess (pps ppx_sexp_conv))
- (libraries uri-sexp ezjsonm kraken_ws core async fastws-async))

@@ -235,7 +235,7 @@ let retrieveTransfers w asset meth =
   Deferred.Or_error.return ()
 
 let main () =
-  Kx_async.with_connection url ~f:begin fun { w; _ } ->
+  Kx_async.with_connection url begin fun _ w ->
     retrieveTransfers w "XTZ" "XTZ" >>=? fun () ->
     retrieveTransfers w "BTC" "Bitcoin" >>=? fun () ->
     retrieveOrders w >>=? fun () ->
