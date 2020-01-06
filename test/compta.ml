@@ -184,46 +184,46 @@ let auth = {
 
 let retrieveOrders w =
   let rec inner n =
-    Fastrest.request ~auth (Kraken_rest.closed_orders ~ofs:n ()) >>=? fun os ->
+    Fastrest.request ~auth (Kraken_rest.closed_orders ~ofs:n ()) >>= fun os ->
     Pipe.write w (kx_of_orders os) >>= fun () ->
     let len = List.length os in
     Logs_async.app (fun m -> m "Found %d closed orders" len) >>= fun () ->
     Deferred.List.iter os ~f:begin fun os ->
       Log_async.app (fun m -> m "%a" Order.pp os)
     end >>= fun () ->
-    if len < 50 then Deferred.Or_error.ok_unit
+    if len < 50 then Deferred.unit
     else inner (n + len) in
   inner 0
 
 let retrieveFills w =
   let rec inner n =
-    Fastrest.request ~auth (Kraken_rest.trade_history n) >>=? fun fills ->
+    Fastrest.request ~auth (Kraken_rest.trade_history n) >>= fun fills ->
     Pipe.write w (kx_of_fills fills) >>= fun () ->
     let len = List.length fills in
     Logs_async.app (fun m -> m "Found %d fills" len) >>= fun () ->
     Deferred.List.iter fills ~f:begin fun fill ->
       Log_async.app (fun m -> m "%a" Trade.pp fill)
     end >>= fun () ->
-    if len < 50 then Deferred.Or_error.ok_unit
+    if len < 50 then Deferred.unit
     else inner (n + len) in
   inner 0
 
 let retrieveLedgers w =
   let rec inner n =
-    Fastrest.request ~auth (Kraken_rest.ledgers ~ofs:n ()) >>=? fun ledgers ->
+    Fastrest.request ~auth (Kraken_rest.ledgers ~ofs:n ()) >>= fun ledgers ->
     Pipe.write w (kx_of_ledgers ledgers) >>= fun () ->
     let len = List.length ledgers in
     Logs_async.app (fun m -> m "Found %d ledger entries" len) >>= fun () ->
     Deferred.List.iter ledgers ~f:begin fun l ->
       Log_async.app (fun m -> m "%a" Ledger.pp l)
     end >>= fun () ->
-    if len < 50 then Deferred.Or_error.ok_unit
+    if len < 50 then Deferred.unit
     else inner (n + len) in
   inner 0
 
 let retrieveTransfers w asset meth =
-  Fastrest.request ~auth (Kraken_rest.transfer_status ~asset ~meth `Deposit) >>=? fun deposits ->
-  Fastrest.request ~auth (Kraken_rest.transfer_status ~asset ~meth `Withdrawal) >>=? fun withdrawals ->
+  Fastrest.request ~auth (Kraken_rest.transfer_status ~asset ~meth `Deposit) >>= fun deposits ->
+  Fastrest.request ~auth (Kraken_rest.transfer_status ~asset ~meth `Withdrawal) >>= fun withdrawals ->
   Pipe.write w (kx_of_transfers deposits Deposit) >>= fun () ->
   Pipe.write w (kx_of_transfers withdrawals Withdrawal) >>= fun () ->
   let nbDeposits = List.length deposits in
@@ -231,18 +231,16 @@ let retrieveTransfers w asset meth =
   Logs_async.app (fun m -> m "Found %d/%d %s deposits" nbDeposits nbWithdrawals asset) >>= fun () ->
   Deferred.List.iter deposits ~f:begin fun d ->
     Log_async.app (fun m -> m "%a" Kraken_rest.Transfer.pp d)
-  end >>= fun () ->
-  Deferred.Or_error.return ()
+  end
 
 let main () =
   Kx_async.with_connection url begin fun _ w ->
-    retrieveTransfers w "XTZ" "XTZ" >>=? fun () ->
-    retrieveTransfers w "BTC" "Bitcoin" >>=? fun () ->
-    retrieveOrders w >>=? fun () ->
-    retrieveFills w >>=? fun () ->
+    retrieveTransfers w "XTZ" "XTZ" >>= fun () ->
+    retrieveTransfers w "BTC" "Bitcoin" >>= fun () ->
+    retrieveOrders w >>= fun () ->
+    retrieveFills w >>= fun () ->
     retrieveLedgers w
-  end >>= fun _ ->
-  Deferred.unit
+  end |> Deferred.ignore_m
 
 let () =
   Command.async ~summary:"Kraken kdb+ compta" begin

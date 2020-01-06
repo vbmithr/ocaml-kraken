@@ -55,8 +55,8 @@ let cfg =
 let auth = Fastrest.auth ~key:cfg.key ~secret:(Base64.decode_exn cfg.secret) ()
 
 let main () =
-  Fastrest.request ~auth Kraken_rest.websocket_token >>|? fun { token; _ } ->
-  Fastws_async.with_connection ~of_string ~to_string url_public begin fun _ r w ->
+  Fastrest.request ~auth Kraken_rest.websocket_token >>= fun { token; _ } ->
+  Fastws_async.with_connection ~of_string ~to_string url_public begin fun r w ->
     let log_incoming msg =
       Logs_async.debug ~src (fun m -> m "%a" pp msg) in
     Pipe.write w (ownTrades token) >>= fun () ->
@@ -74,8 +74,6 @@ let () =
       let () = Logs_async_reporter.set_level_via_param [] in
       fun () ->
         Logs.set_reporter (Logs_async_reporter.reporter ()) ;
-        main () >>= function
-        | Error e -> Error.raise e
-        | Ok _ -> Deferred.unit
+        main ()
     ] end |>
   Command.run
