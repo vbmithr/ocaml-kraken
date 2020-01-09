@@ -134,8 +134,8 @@ type unsubscribe = {
 
 type t =
   | Error of error
-  | Ping of float option
-  | Pong of float option
+  | Ping of float
+  | Pong of float
   | HeartBt
   | Status of status
   | Subscribe of subscribe
@@ -159,7 +159,7 @@ and 'a update = {
 
 val ownTrades : ?reqid:int -> string -> t
 val openOrders : ?reqid:int -> string -> t
-val ping : float option -> t
+val ping : float -> t
 val tickers : ?reqid:int -> Pair.t list -> t
 val trades : ?reqid:int -> Pair.t list -> t
 val book10 : ?reqid:int -> Pair.t list -> t

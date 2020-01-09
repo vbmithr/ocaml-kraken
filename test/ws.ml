@@ -13,7 +13,7 @@ let process_user_cmd w =
       let chanid = int_of_string chanid in
       Pipe.write w (Unsubscribe { chanid ; reqid = None })
     | "ping" :: _ ->
-      Pipe.write w (ping (Some (Time_ns.(now () |> to_span_since_epoch |> Span.to_us))))
+      Pipe.write w (ping (Time_ns.(now () |> to_span_since_epoch |> Span.to_us)))
     | "tickers" :: pair ->
       let pairs = List.map ~f:Pair.of_string_exn pair in
       Pipe.write w (tickers pairs)

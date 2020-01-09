@@ -347,8 +347,8 @@ let book_encoding =
 
 type t =
   | Error of error
-  | Ping of float option
-  | Pong of float option
+  | Ping of float
+  | Pong of float
   | HeartBt
   | Status of status
   | Subscribe of subscribe
@@ -389,19 +389,19 @@ let pp ppf t =
 
 let ping =
   conv
-    (fun reqid -> ((), Option.map Int64.of_float reqid))
-    (fun ((), reqid) -> Option.map Int64.to_float reqid)
+    (fun reqid -> ((), Int64.of_float reqid))
+    (fun ((), reqid) -> Int64.to_float reqid)
     (obj2
        (req "event" (constant "ping"))
-       (opt "reqid" int53))
+       (req "reqid" int53))
 
 let pong =
   conv
-    (fun reqid -> ((), Option.map Int64.of_float reqid))
-    (fun ((), reqid) -> Option.map Int64.to_float reqid)
+    (fun reqid -> ((), Int64.of_float reqid))
+    (fun ((), reqid) -> Int64.to_float reqid)
     (obj2
        (req "event" (constant "pong"))
-       (opt "reqid" int53))
+       (req "reqid" int53))
 
 let hb =
   obj1 (req "event" (constant "heartbeat"))
