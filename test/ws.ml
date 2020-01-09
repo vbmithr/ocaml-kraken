@@ -12,10 +12,8 @@ let process_user_cmd w =
     | "unsubscribe" :: chanid :: _ ->
       let chanid = int_of_string chanid in
       Pipe.write w (Unsubscribe { chanid ; reqid = None })
-    | "ping" :: v :: _ ->
-      Pipe.write w (Ping (int_of_string_opt v))
     | "ping" :: _ ->
-      Pipe.write w (Ping None)
+      Pipe.write w (ping (Some (Time_ns.(now () |> to_span_since_epoch |> Span.to_us))))
     | "tickers" :: pair ->
       let pairs = List.map ~f:Pair.of_string_exn pair in
       Pipe.write w (tickers pairs)
@@ -56,7 +54,7 @@ let auth = Fastrest.auth ~key:cfg.key ~secret:(Base64.decode_exn cfg.secret) ()
 
 let main () =
   Fastrest.request ~auth Kraken_rest.websocket_token >>= fun { token; _ } ->
-  Fastws_async.with_connection ~of_string ~to_string url_public begin fun r w ->
+  Fastws_async.with_connection ~of_string ~to_string url_auth begin fun r w ->
     let log_incoming msg =
       Logs_async.debug ~src (fun m -> m "%a" pp msg) in
     Pipe.write w (ownTrades token) >>= fun () ->

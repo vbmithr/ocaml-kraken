@@ -115,21 +115,22 @@ let subscription_status =
      (opt "pair" Pair.encoding)
      (req "subscription" subscription))
 
-type subscription_error = {
+type error = {
+  event: string ;
   reqid : int option ;
-  msg : string
+  msg : string ;
 } [@@deriving sexp_of]
 
-let subscription_error =
+let error =
   conv
     (fun _ -> assert false)
-    (fun ((), ((), reqid, (), msg)) -> { reqid ; msg })
+    (fun ((), (event, reqid, (), msg)) -> { event; reqid ; msg })
     (merge_objs unit
-    ((obj4
-        (req "event" (constant "subscriptionStatus"))
-        (opt "reqid" int)
-        (req "status" (constant "error"))
-        (req "errorMessage" string))))
+       ((obj4
+           (req "event" string)
+           (opt "reqid" int)
+           (req "status" (constant "error"))
+           (req "errorMessage" string))))
 
 type unsubscribe = {
   chanid : int ;
@@ -345,13 +346,13 @@ let book_encoding =
        (dft "b" (list book_entry_encoding) []))
 
 type t =
-  | Ping of int option
-  | Pong of int option
+  | Error of error
+  | Ping of float option
+  | Pong of float option
   | HeartBt
   | Status of status
   | Subscribe of subscribe
   | Unsubscribe of unsubscribe
-  | SubscriptionError of subscription_error
   | SubscriptionStatus of subscription_status
   | Ticker of ticker update
   | Trade of trade list update
@@ -368,17 +369,6 @@ and 'a update = {
   data: 'a ;
 }
 [@@deriving sexp_of]
-
-
-let ownTrades ?reqid token = Subscribe { reqid; pairs = []; sub = OwnTrades token }
-let openOrders ?reqid token = Subscribe { reqid; pairs = []; sub = OpenOrders token }
-let tickers ?reqid pairs = Subscribe { reqid ; pairs ; sub = Ticker }
-let trades ?reqid pairs = Subscribe { reqid ; pairs ; sub = Trade }
-let book10 ?reqid pairs = Subscribe { reqid ; pairs ; sub = Book 10 }
-let book25 ?reqid pairs = Subscribe { reqid ; pairs ; sub = Book 25 }
-let book100 ?reqid pairs = Subscribe { reqid ; pairs ; sub = Book 100 }
-let book500 ?reqid pairs = Subscribe { reqid ; pairs ; sub = Book 500 }
-let book1000 ?reqid pairs = Subscribe { reqid ; pairs ; sub = Book 1000 }
 
 let full_book_update_encoding =
   conv
@@ -399,19 +389,19 @@ let pp ppf t =
 
 let ping =
   conv
-    (fun reqid -> ((), reqid))
-    (fun ((), reqid) -> reqid)
+    (fun reqid -> ((), Option.map Int64.of_float reqid))
+    (fun ((), reqid) -> Option.map Int64.to_float reqid)
     (obj2
        (req "event" (constant "ping"))
-       (opt "reqid" int))
+       (opt "reqid" int53))
 
 let pong =
   conv
-    (fun reqid -> ((), reqid))
-    (fun ((), reqid) -> reqid)
+    (fun reqid -> ((), Option.map Int64.of_float reqid))
+    (fun ((), reqid) -> Option.map Int64.to_float reqid)
     (obj2
        (req "event" (constant "pong"))
-       (opt "reqid" int))
+       (opt "reqid" int53))
 
 let hb =
   obj1 (req "event" (constant "heartbeat"))
@@ -434,7 +424,7 @@ let encoding =
     case pong (function Pong reqid -> Some reqid | _ -> None) (fun reqid -> Pong reqid) ;
     case hb (function HeartBt -> Some () | _ -> None) (fun () -> HeartBt) ;
     case status (function Status s -> Some s | _ -> None) (fun s -> Status s) ;
-    case subscription_error (function SubscriptionError e -> Some e | _ -> None) (fun e -> SubscriptionError e) ;
+    case error (function Error e -> Some e | _ -> None) (fun e -> Error e) ;
     case subscription_status (function SubscriptionStatus s -> Some s | _ -> None) (fun s -> SubscriptionStatus s) ;
     case subscribe (function Subscribe v -> Some v | _ -> None) (fun v -> Subscribe v) ;
     case unsubscribe (function Unsubscribe v -> Some v | _ -> None) (fun v -> Unsubscribe v) ;
@@ -456,3 +446,13 @@ let to_string t =
   | `A _ | `O _ as a -> Ezjsonm.to_string a
   | #Json_repr.ezjsonm -> invalid_arg "not a json document"
 
+let ping t = Ping t
+let ownTrades ?reqid token = Subscribe { reqid; pairs = []; sub = OwnTrades token }
+let openOrders ?reqid token = Subscribe { reqid; pairs = []; sub = OpenOrders token }
+let tickers ?reqid pairs = Subscribe { reqid ; pairs ; sub = Ticker }
+let trades ?reqid pairs = Subscribe { reqid ; pairs ; sub = Trade }
+let book10 ?reqid pairs = Subscribe { reqid ; pairs ; sub = Book 10 }
+let book25 ?reqid pairs = Subscribe { reqid ; pairs ; sub = Book 25 }
+let book100 ?reqid pairs = Subscribe { reqid ; pairs ; sub = Book 100 }
+let book500 ?reqid pairs = Subscribe { reqid ; pairs ; sub = Book 500 }
+let book1000 ?reqid pairs = Subscribe { reqid ; pairs ; sub = Book 1000 }

@@ -41,7 +41,8 @@ type subscription_status = {
   subscription : subscription ;
 } [@@deriving sexp_of]
 
-type subscription_error = {
+type error = {
+  event: string ;
   reqid : int option ;
   msg : string
 } [@@deriving sexp_of]
@@ -132,13 +133,13 @@ type unsubscribe = {
 } [@@deriving sexp_of]
 
 type t =
-  | Ping of int option
-  | Pong of int option
+  | Error of error
+  | Ping of float option
+  | Pong of float option
   | HeartBt
   | Status of status
   | Subscribe of subscribe
   | Unsubscribe of unsubscribe
-  | SubscriptionError of subscription_error
   | SubscriptionStatus of subscription_status
   | Ticker of ticker update
   | Trade of trade list update
@@ -158,6 +159,7 @@ and 'a update = {
 
 val ownTrades : ?reqid:int -> string -> t
 val openOrders : ?reqid:int -> string -> t
+val ping : float option -> t
 val tickers : ?reqid:int -> Pair.t list -> t
 val trades : ?reqid:int -> Pair.t list -> t
 val book10 : ?reqid:int -> Pair.t list -> t
