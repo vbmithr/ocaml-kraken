@@ -4,6 +4,7 @@
  (preprocess (pps ppx_jane ppx_sexp_conv))
  (libraries
    kraken-rest
+   alcotest
    alcotest-async
    logs-async-reporter))
 
@@ -11,7 +12,7 @@
  (name compta)
  (modules compta)
  (public_name kraken-compta)
- (package kraken-rest)
+ (package kraken-bin)
  (preprocess (pps ppx_jane ppx_sexp_conv))
  (libraries
    logs-async-reporter
@@ -23,7 +24,7 @@
  (name ws)
  (modules ws)
  (public_name kraken-ws-cli)
- (package kraken-ws)
+ (package kraken-bin)
  (preprocess (pps ppx_jane ppx_sexp_conv))
  (libraries
    core

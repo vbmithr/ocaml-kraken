@@ -1,0 +1,25 @@
+opam-version: "2.0"
+authors: "Vincent Bernardoff <vb@luminar.eu.org>"
+maintainer: "Vincent Bernardoff <vb@luminar.eu.org>"
+homepage: "https://github.com/vbmithr/ocaml-kraken"
+bug-reports: "https://github.com/vbmithr/ocaml-kraken/issues"
+dev-repo: "git+https://github.com/vbmithr/ocaml-kraken"
+doc: "https://vbmithr.github.io/ocaml-kraken/doc"
+build: [ "dune" "build" "-j" jobs "-p" name ]
+run-test: [ "dune" "runtest" "-j" jobs "-p" name ]
+depends: [
+  "dune" {>= "1.11.4"}
+  "kraken" {= version}
+  "fastrest" {= version}
+  "core" {>= "v0.12.4"}
+  "base64" {>= "3.2.0"}
+  "digestif" {>= "0.8.0"}
+  "ptime" {>= "0.8.5"}
+  "ocplib-json-typed" {>= "0.7.1"}
+  "logs-async-reporter" {with-test & = version}
+  "alcotest" {with-test & >= "0.8.5"}
+  "alcotest-async" {with-test & >= "0.8.5"}
+]
+synopsis: "Kraken API"
+description: """
+"""

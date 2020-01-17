@@ -474,5 +474,5 @@ let kraklist encoding idx_of_string =
         List.map begin fun (k, v) ->
           Ezjsonm_encoding.destruct_safe (encoding (idx_of_string k)) v
         end vs
-      | #Ezjsonm.value -> invalid_arg "list_encoding")
+      | #Json_repr.Ezjsonm.value -> invalid_arg "list_encoding")
     any_ezjson_value

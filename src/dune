@@ -4,13 +4,11 @@
  (modules kraken)
  (preprocess (pps ppx_sexp_conv))
  (libraries
+   sexplib
    ocplib-endian
-   fmt
    uuidm
    fixtypes
    ptime
-   uri
-   ezjsonm
    ocplib-json-typed))
 
 (library
@@ -19,10 +17,10 @@
  (modules kraken_rest)
  (preprocess (pps ppx_sexp_conv))
  (libraries
+  kraken
   core
   base64
   digestif.c
-  kraken
   ptime
   uri
   ocplib-json-typed
@@ -33,4 +31,10 @@
  (public_name kraken-ws)
  (modules kraken_ws)
  (preprocess (pps ppx_sexp_conv))
- (libraries fixtypes kraken ptime uri ocplib-json-typed))
+ (libraries
+   kraken
+   ezjsonm
+   fixtypes
+   ptime
+   uri
+   ocplib-json-typed))
