@@ -9,6 +9,7 @@ build: [ "dune" "build" "-j" jobs "-p" name ]
 run-test: [ "dune" "runtest" "-j" jobs "-p" name ]
 depends: [
   "dune" {>= "1.11.4"}
+  "ocplib-endian" {>= "1.0"}
   "sexplib" {>= "v0.12.0"}
   "ptime" {>= "0.8.5"}
   "uuidm" {>= "0.9.7"}
