@@ -1,6 +1,7 @@
 (test
  (name       test)
  (modules    test)
+ (package kraken-rest)
  (preprocess (pps ppx_jane ppx_sexp_conv))
  (libraries
    kraken-rest
