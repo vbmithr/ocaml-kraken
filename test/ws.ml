@@ -34,23 +34,13 @@ let process_user_cmd w =
   in
   loop ()
 
-module Cfg = struct
-  type cfg = {
-    key: string ;
-    secret: string ;
-    passphrase: string [@default ""];
-    quote: (string * int) list [@default []];
-  } [@@deriving sexp]
+let key, secret =
+  match String.split ~on:':' (Sys.getenv_exn "TOKEN_KRAKEN") with
+  | [key; secret] -> key, secret
+  | _ -> assert false
 
-  type t = (string * cfg) list [@@deriving sexp]
-end
-
-let default_cfg = Filename.concat (Option.value_exn (Sys.getenv "HOME")) ".virtu"
-let cfg =
-  List.Assoc.find_exn ~equal:String.equal
-    (Sexplib.Sexp.load_sexp_conv_exn default_cfg Cfg.t_of_sexp) "KRAKEN"
-
-let auth = Fastrest.auth ~key:cfg.key ~secret:(Base64.decode_exn cfg.secret) ()
+let auth =
+  Fastrest.auth ~key ~secret:(Base64.decode_exn secret) ()
 
 let main () =
   Fastrest.request ~auth Kraken_rest.websocket_token >>= fun { token; _ } ->

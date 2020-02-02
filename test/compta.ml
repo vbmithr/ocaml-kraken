@@ -1,27 +1,9 @@
 open Core
 open Async
+open Kraken
 
 let src = Logs.Src.create "kraken.compta"
 module Log_async = (val Logs_async.src_log src : Logs_async.LOG)
-
-module Cfg = struct
-  type cfg = {
-    key: string ;
-    secret: string ;
-    passphrase: string [@default ""];
-    quote: (string * int) list [@default []];
-  } [@@deriving sexp]
-
-  type t = (string * cfg) list [@@deriving sexp]
-end
-
-let default_cfg = Filename.concat (Option.value_exn (Sys.getenv "HOME")) ".virtu"
-let cfg =
-  List.Assoc.find_exn ~equal:String.equal
-    (Sexplib.Sexp.load_sexp_conv_exn default_cfg Cfg.t_of_sexp) "KRAKEN"
-
-open Kraken
-
 
 let url = Uri.make ~scheme:"kdb" ~host:"localhost" ~port:5042 ()
 
@@ -176,9 +158,14 @@ let kx_of_transfers transfers kind =
   Kx_async.create (t3 (a sym) (a sym) transfersw)
     ("upd", "transfers", (times, syms, xchs, types, statuses, refids, txids, addrs, amounts, fees))
 
+let key, secret =
+  match String.split ~on:':' (Sys.getenv_exn "TOKEN_KRAKEN") with
+  | [key; secret] -> key, secret
+  | _ -> assert false
+
 let auth = {
-  Fastrest.key = cfg.key ;
-  secret = Base64.decode_exn cfg.secret ;
+  Fastrest.key ;
+  secret = Base64.decode_exn secret ;
   meta = []
 }
 
