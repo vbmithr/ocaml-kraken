@@ -1,8 +1,6 @@
 (executable
  (name ws)
- (modules ws)
  (public_name kraken-ws-cli)
- (package kraken-bin)
  (preprocess (pps ppx_jane ppx_sexp_conv))
  (libraries
    core
