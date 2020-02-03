@@ -80,8 +80,8 @@ let kx_of_orders orders =
     costs.(i) <- cost ;
     fees.(i) <- fee ;
     pxs.(i) <- price ;
-    stopPxs.(i) <- if stopprice = 0. then Kx.nf else stopprice ;
-    limitPxs.(i) <- if limitprice = 0. then Kx.nf else limitprice ;
+    stopPxs.(i) <- if Float.equal stopprice 0. then Kx.nf else stopprice ;
+    limitPxs.(i) <- if Float.equal limitprice 0. then Kx.nf else limitprice ;
   end ;
   let open Kx in
   Kx_async.create (t3 (a sym) (a sym) ordersw)

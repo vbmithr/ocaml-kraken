@@ -47,8 +47,8 @@ let roundtrip ss =
   end
 
 let krakid = [
-  Alcotest.test_case "basic" `Quick (fun () -> ignore (partial_rt 10000)) ;
-  Alcotest.test_case "uuid" `Quick (fun () -> ignore (uuid 10000)) ;
+  Alcotest.test_case "basic" `Quick (fun () -> partial_rt 10000) ;
+  Alcotest.test_case "uuid" `Quick (fun () -> uuid 10000) ;
   Alcotest.test_case "roundtrip" `Quick (fun () -> roundtrip ["BMBSASZ-E3ZQEE-JB3US4";
                                                               "L7V3M2-CH7MR-WMPRR7";
                                                               "L7V3M2-CH7MR-WMPRR7";
