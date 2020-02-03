@@ -1,0 +1,11 @@
+(executable
+ (name compta)
+ (modules compta)
+ (public_name kraken-compta)
+ (package kraken-bin)
+ (preprocess (pps ppx_jane ppx_sexp_conv))
+ (libraries
+   logs-async-reporter
+   kraken-rest
+   kx-async
+   kraken-ws))
