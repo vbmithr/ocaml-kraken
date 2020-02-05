@@ -1,0 +1,15 @@
+(executable
+ (name trade_publisher)
+ (public_name kraken-trade-publisher)
+ (preprocess (pps ppx_jane ppx_sexp_conv))
+ (libraries
+   kraken-ws
+   kraken-rest
+   ezjsonm
+   orewa
+   actor
+   core
+   async
+   fastrest
+   fastws-async
+   logs-async-reporter))
