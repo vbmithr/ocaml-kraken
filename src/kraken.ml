@@ -380,7 +380,9 @@ module Trade = struct
 
   let encoding id =
     conv
-      (fun _ -> assert false)
+      (fun { ordertxid ; postxid ; pair ; time ; side ; ord_type ;
+             price ; cost ; fee ; vol ; margin ; misc ; _ } ->
+        ((ordertxid, pair, time, side, ord_type, price, cost, fee, vol, margin), (misc, Some postxid)))
       (fun ((ordertxid, pair, time, side, ord_type, price, cost, fee, vol, margin), (misc, postxid)) ->
          { id; ordertxid ; postxid = Option.join postxid; pair ; time ; side ; ord_type ;
            price ; cost ; fee ; vol ; margin ; misc })
