@@ -5,6 +5,7 @@
  (libraries
    core
    async
+   yojson
    fastws-async
    fastrest
    kraken-rest

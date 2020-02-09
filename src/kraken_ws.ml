@@ -438,14 +438,6 @@ let encoding =
     case openOrders_enc (function OpenOrders os -> Some os | _ -> None) (fun os -> OpenOrders os) ;
   ]
 
-let of_string msg =
-  Ezjsonm_encoding.destruct_safe encoding (Ezjsonm.from_string msg)
-
-let to_string t =
-  match Ezjsonm_encoding.construct encoding t with
-  | `A _ | `O _ as a -> Ezjsonm.to_string a
-  | #Json_repr.ezjsonm -> invalid_arg "not a json document"
-
 let ping t = Ping t
 let ownTrades ?reqid token = Subscribe { reqid; pairs = []; sub = OwnTrades token }
 let openOrders ?reqid token = Subscribe { reqid; pairs = []; sub = OpenOrders token }

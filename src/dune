@@ -33,7 +33,6 @@
  (preprocess (pps ppx_sexp_conv))
  (libraries
    kraken
-   ezjsonm
    fixtypes
    ptime
    uri

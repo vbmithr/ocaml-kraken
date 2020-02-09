@@ -43,6 +43,12 @@ let auth =
   Fastrest.auth ~key ~secret:(Base64.decode_exn secret) ()
 
 let main () =
+  let module Encoding = Json_encoding.Make(Json_repr.Yojson) in
+  let buf = Bi_outbuf.create 4096 in
+  let of_string s =
+    Encoding.destruct Kraken_ws.encoding (Yojson.Safe.from_string ~buf s) in
+  let to_string t =
+    Yojson.Safe.to_string ~buf (Encoding.construct Kraken_ws.encoding t) in
   Fastrest.request ~auth Kraken_rest.websocket_token >>= fun { token; _ } ->
   Fastws_async.with_connection ~of_string ~to_string url_auth begin fun r w ->
     let log_incoming msg =
