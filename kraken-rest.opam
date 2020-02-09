@@ -16,7 +16,6 @@ depends: [
   "digestif" {>= "0.8.0"}
   "ptime" {>= "0.8.5"}
   "ocplib-json-typed" {>= "0.7.1"}
-  "logs-async-reporter" {with-test & = version}
   "alcotest" {with-test & >= "0.8.5"}
   "alcotest-async" {with-test & >= "0.8.5"}
 ]

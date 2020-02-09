@@ -77,8 +77,6 @@ let rest = [
 ]
 
 let () =
-  Logs.set_reporter (Logs_async_reporter.reporter ()) ;
-  Logs.set_level (Some Debug) ;
   Alcotest.run "kraken" [
     "krakid", krakid ;
     "rest", rest ;
