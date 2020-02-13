@@ -6,5 +6,4 @@
  (libraries
    kraken-rest
    alcotest
-   alcotest-async
-   logs-async-reporter))
+   alcotest-async))

@@ -1,9 +1,9 @@
 open Core
 open Async
-open Alcotest
-
 open Kraken
 open Kraken_rest
+open Alcotest
+open Alcotest_async
 
 let key, secret =
   match String.split ~on:':' (Sys.getenv_exn "TOKEN_KRAKEN") with
@@ -47,12 +47,13 @@ let roundtrip ss =
   end
 
 let krakid = [
-  Alcotest.test_case "basic" `Quick (fun () -> partial_rt 10000) ;
-  Alcotest.test_case "uuid" `Quick (fun () -> uuid 10000) ;
-  Alcotest.test_case "roundtrip" `Quick (fun () -> roundtrip ["BMBSASZ-E3ZQEE-JB3US4";
-                                                              "L7V3M2-CH7MR-WMPRR7";
-                                                              "L7V3M2-CH7MR-WMPRR7";
-                                                              "RMB4MTB-O5XAS-2EWPSX"])
+  test_case_sync "basic" `Quick (fun () -> partial_rt 10000) ;
+  test_case_sync "uuid" `Quick (fun () -> uuid 10000) ;
+  test_case_sync "roundtrip" `Quick (fun () ->
+      roundtrip ["BMBSASZ-E3ZQEE-JB3US4";
+                 "L7V3M2-CH7MR-WMPRR7";
+                 "L7V3M2-CH7MR-WMPRR7";
+                 "RMB4MTB-O5XAS-2EWPSX"])
 ]
 
 let rest = [
@@ -76,10 +77,12 @@ let rest = [
   wrap_request "WebsocketToken" websocket_token ;
 ]
 
-let () =
-  Logs.set_reporter (Logs_async_reporter.reporter ()) ;
-  Logs.set_level (Some Debug) ;
-  Alcotest.run "kraken" [
+let main () =
+  run "kraken" [
     "krakid", krakid ;
     "rest", rest ;
   ]
+
+let () =
+  don't_wait_for (main ()) ;
+  never_returns (Scheduler.go ())
